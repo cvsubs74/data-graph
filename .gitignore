@@ -19,5 +19,10 @@ __pycache__/
 *.pyd
 .Python
 
+# Environment variables
+.env
+agents/*/.env
+venv/
+
 # Other
 .DS_Store
