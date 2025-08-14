@@ -1,0 +1,27 @@
+# Third-Party Data Sharing Agreement Overview
+
+This document outlines the data shared with our key third-party vendors.
+
+- **Vendor**: AnalyticsCorp
+  - **Purpose**: Product Analytics
+  - **Data Shared**: Anonymized User ID, event data, device type.
+  - **Asset Used**: Data is sent from our Mobile App and Web App.
+  - **Relationship**: AnalyticsCorp is a data processor.
+
+- **Vendor**: Zendesk
+  - **Purpose**: Customer Relationship Management (CRM)
+  - **Data Shared**: Customer Name, Email Address, support ticket history.
+  - **Asset Used**: Zendesk is a self-contained SaaS platform.
+  - **Relationship**: Zendesk hosts critical customer support data.
+
+- **Vendor**: Google Cloud Platform (GCP)
+  - **Purpose**: Cloud Infrastructure Hosting
+  - **Data Shared**: Hosts the entirety of our Primary Production Database.
+  - **Asset Used**: Primary Production Database.
+  - **Relationship**: GCP is our primary cloud infrastructure provider.
+
+- **Vendor**: Stripe
+  - **Purpose**: Payment Processing
+  - **Data Shared**: Customer Name, Email, Credit Card Details, Billing Address.
+  - **Asset Used**: Stripe's secure payment platform.
+  - **Relationship**: Stripe processes all financial transactions for our services.

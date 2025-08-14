@@ -1,0 +1,25 @@
+# Comprehensive Privacy Policy
+
+**Last Updated: 2025-08-13**
+
+## 1. Introduction
+Welcome to OurCompany Inc. This policy outlines how we collect, use, and protect your personal information. Our main data processing activities include providing our SaaS Platform, marketing, and customer support. Our primary data storage is the Production AWS RDS, managed by the Core-Infra team. User authentication is a key processing activity that uses this database.
+
+## 2. Data We Collect
+- **Contact Information**: We collect user names and email addresses during account setup. This data belongs to our Customers.
+- **Financial Information**: For billing, we process credit card numbers via our payment vendor, PaySecure. PaySecure hosts their own secure payment processing environment.
+- **Technical Information**: We log IP addresses and device IDs for security and analytics. This is handled by our internal logging service, LogStash, and also sent to AnalyticsCorp for product improvement.
+
+## 3. How We Use Your Data
+- **Service Provision**: To operate the SaaS Platform.
+- **Customer Support**: To assist with user inquiries, handled via the Zendesk CRM.
+- **Marketing**: To send promotional emails about new features. Users can opt out. This process is managed using the Marketo marketing automation platform.
+
+## 4. Data Sharing and Third Parties
+- **AnalyticsCorp**: Receives anonymized usage data.
+- **PaySecure**: Processes all payment information.
+- **Zendesk**: Hosts customer support tickets and contact information.
+- **Marketo**: Manages our marketing email campaigns.
+
+## 5. Data Subject Rights
+Users, who are primarily EU Customers and US-based Employees, have the right to access, rectify, or erase their personal data. Data deletion requests are handled by our support team through a defined Data Deletion Process.

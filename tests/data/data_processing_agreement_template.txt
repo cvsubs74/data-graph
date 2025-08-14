@@ -1,0 +1,18 @@
+# Data Processing Agreement (DPA)
+
+**Between**: OurCompany Inc. (Data Controller)
+**And**: [Vendor Name] (Data Processor)
+
+## Scope
+This DPA applies to the processing of personal data belonging to Data Subjects (including Customers and Employees) by the Data Processor on behalf of the Data Controller.
+
+## Processing Details
+- **Processing Activity**: The Processor will perform [Description of Service, e.g., 'Email Marketing Services'].
+- **Data Elements Processed**: This includes [List of Data Elements, e.g., 'Email Address', 'First Name', 'Last Name'].
+- **Data Subject Types**: The data belongs to [List of Subject Types, e.g., 'End Users', 'Newsletter Subscribers'].
+- **Asset**: The processing will be performed using the [Vendor's Platform Name, e.g., 'MailChimp Platform'].
+
+## Processor Obligations
+- The Processor shall only process data according to the Controller's documented instructions.
+- The Processor shall implement appropriate technical and organizational security measures to protect the data, including encryption at rest and in transit.
+- The Processor must notify the Controller of any data breach without undue delay.

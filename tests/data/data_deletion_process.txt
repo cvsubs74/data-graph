@@ -1,0 +1,9 @@
+Business Process: User Data Deletion Request
+
+This process handles requests from users to have their personal data deleted from our systems, in compliance with privacy regulations like GDPR and CCPA.
+
+When a request is received, the process accesses two primary assets: the CRM System and the Email Marketing Platform.
+
+The CRM System contains the following data elements for a user: UserID, UserName, UserEmail, and PurchaseHistory.
+
+The Email Marketing Platform stores the user's EmailAddress and SubscriptionStatus. The process ensures that the user's data is purged from both assets.

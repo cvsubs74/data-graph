@@ -1,0 +1,9 @@
+Business Process: New User Onboarding
+
+This process describes the steps for registering a new user and collecting their initial data and consent.
+
+The key assets involved are the Authentication Service and the User Profile Database.
+
+The Authentication Service manages sensitive credentials and stores the UserID, HashedPassword, and any OAuthTokens associated with the account.
+
+The User Profile Database holds less sensitive information, including the UserID, FullName, DateOfBirth, and a record of their ConsentFlags for marketing and data sharing.

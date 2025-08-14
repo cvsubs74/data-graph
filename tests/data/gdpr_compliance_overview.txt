@@ -1,0 +1,14 @@
+# GDPR Compliance Overview
+
+This document summarizes our commitment to the General Data Protection Regulation (GDPR) for all EU Customers.
+
+**Data Protection Officer (DPO)**: Our DPO can be contacted at dpo@ourcompany.com.
+
+**Legal Basis for Processing**:
+- **Performance of a Contract**: Most of our data processing, such as User Authentication and providing core services via our SaaS Platform, is necessary to fulfill our contract with users.
+- **Consent**: We rely on explicit consent for activities like sending marketing emails. This is managed by our Marketing Automation System.
+- **Legitimate Interest**: We process usage analytics for product improvement, which we consider a legitimate interest. This involves the Analytics Platform.
+
+**Data Subject Rights**:
+- **Right to Access & Rectification**: EU Customers can view and update their profile information directly in their account settings. This data is stored in the Customer Master Database.
+- **Right to Erasure (Right to be Forgotten)**: We have a formal Data Deletion Process to handle erasure requests. This process ensures data is removed from the Customer Master Database and any connected systems like the Marketing Automation System within 30 days.

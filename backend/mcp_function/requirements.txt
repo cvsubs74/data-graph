@@ -1,0 +1,9 @@
+# MCP Server
+fastmcp
+
+# Google Cloud Services
+google-cloud-spanner
+google-cloud-secret-manager
+
+# AI & Machine Learning
+vertexai

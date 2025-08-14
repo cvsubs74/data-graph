@@ -1,0 +1,21 @@
+# Test dependencies for Privacy Data Governance Graph Backend
+# Use with: pip install -r requirements.txt
+
+# HTTP requests for integration testing
+requests>=2.31.0
+
+# FastMCP client for MCP server testing
+fastmcp>=2.11.0
+
+# Google Cloud dependencies (for unit tests)
+google-cloud-spanner>=3.40.0
+google-cloud-secret-manager>=2.16.0
+vertexai>=1.38.0
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Test utilities
+pytest-mock>=3.11.0
+pytest-cov>=4.1.0

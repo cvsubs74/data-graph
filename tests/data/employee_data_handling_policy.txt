@@ -1,0 +1,15 @@
+# Internal Policy: Employee Data Handling
+
+## Purpose
+This policy governs the handling of all personal data belonging to our Employees.
+
+## Systems and Data
+- **Human Resources Information System (HRIS)**: Our primary system for employee data is 'Workday'. It is considered a critical internal Asset.
+- **Data Elements in Workday**: Workday contains sensitive employee information, including Social Security Numbers, Bank Account Details for payroll, and Performance Review Data.
+- **Processing Activities**: 
+  - **Payroll Processing**: This activity uses Bank Account Details from Workday and transfers them to our payroll vendor, ADP.
+  - **Benefits Administration**: This involves sharing Employee Name and dependent information with our benefits provider, BlueCross.
+  - **Internal Reporting**: The HR team runs reports from Workday for headcount and compensation analysis.
+
+## Access Control
+Access to Workday is strictly limited to HR personnel. All access is logged in our central security logging system.

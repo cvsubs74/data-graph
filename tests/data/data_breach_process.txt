@@ -1,0 +1,9 @@
+Business Process: Data Breach Notification
+
+This process outlines the procedure for notifying affected users in the event of a data breach.
+
+It relies on the Incident Management System and the Public Relations Comms Tool.
+
+The Incident Management System is the source of truth for breach details, containing the IncidentID, the AffectedUserCount, and a list of DataCategoriesImpacted (e.g., 'Contact Info', 'Financial Info').
+
+The Public Relations Comms Tool uses this information to populate a NotificationTemplate, which is then sent to a RecipientList generated from the affected user base.

@@ -1,0 +1,23 @@
+# Dependencies
+/node_modules
+
+# Vite
+.env.local
+.env.*.local
+dist
+dist-ssr
+*.local
+
+# IDEs
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Other
+.DS_Store
