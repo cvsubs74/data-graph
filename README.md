@@ -232,7 +232,7 @@ gcloud functions deploy ingest-function \
 
 **`mcp-server`:**
 ```bash
-cd backend/mcp_function
+cd backend/data_graph_mcp_server
 
 gcloud run deploy mcp-server \
   --source=. \

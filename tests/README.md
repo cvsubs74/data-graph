@@ -65,7 +65,7 @@ The test runner automatically:
 
 Tests are configured to use the deployed Cloud Functions:
 - **Ingest Function**: `https://ingest-function-pt7snlxyuq-uc.a.run.app`
-- **MCP Function**: `https://mcp-function-pt7snlxyuq-uc.a.run.app`
+- **MCP Server**: `https://mcp-server-79797180773.us-central1.run.app`
 
 ## Dependencies
 

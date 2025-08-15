@@ -80,8 +80,8 @@ deploy_mcp() {
   mkdir -p "$build_dir"
   
   # Copy MCP server files
-  echo "Copying MCP function files..."
-  cp -R "backend/mcp_function/"* "$build_dir/"
+  echo "Copying MCP server files..."
+  cp -R "backend/data_graph_mcp_server/"* "$build_dir/"
   
   # Copy the shared services directory
   echo "Copying shared services..."

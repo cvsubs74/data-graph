@@ -25,8 +25,8 @@ The backend is composed of four main components:
 - **Description**: A Google Cloud Function with an HTTP trigger that handles user queries.
 - **Functionality**: A thin wrapper that receives a JSON payload with a "question", passes it to `data_graph_service.answer_question()`, and returns the LLM-generated answer.
 
-### d. `mcp_function`
-- **Location**: `backend/mcp_function/`
+### d. `data_graph_mcp_server`
+- **Location**: `backend/data_graph_mcp_server/`
 - **Description**: A Google Cloud Function that exposes the backend logic via the Model Context Protocol (MCP).
 - **Functionality**: Uses `FastAPI` and `FastMCP` to expose methods from the `DataGraphService` as callable "tools" for other LLM agents. The `mangum` library serves as an adapter to make the FastAPI (ASGI) application compatible with the GCF (WSGI) environment.
 
@@ -49,4 +49,4 @@ The backend is composed of four main components:
 
 ## 3. Deployment
 
-Each function (`ingest_function`, `query_function`, `mcp_function`) is deployed as a separate, independent Google Cloud Function. Each has its own `main.py` entry point and `requirements.txt` file, ensuring clean dependency management and isolated scaling.
+Each function (`ingest_function`, `query_function`, `data_graph_mcp_server`) is deployed as a separate, independent Google Cloud service. The ingest and query functions are deployed as Cloud Functions, while the MCP server is deployed as a Cloud Run service. Each has its own `main.py` entry point and `requirements.txt` file, ensuring clean dependency management and isolated scaling.
