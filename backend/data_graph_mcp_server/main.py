@@ -460,6 +460,296 @@ def delete_relationship(source_id: str, target_id: str) -> bool:
         logger.error(f"Error deleting relationship: {e}")
         return False
 
+@mcp.tool()
+def list_all_relationships(limit: int = 1000, with_entity_details: bool = False) -> List[Dict[str, Any]]:
+    """
+    Lists all relationships in the privacy data governance graph.
+    
+    Args:
+        limit: Maximum number of relationships to return (default: 1000)
+        with_entity_details: If True, include entity details (name, type) for source and target
+    
+    Returns:
+        A list of relationship dictionaries with details like source_id, target_id, relationship_type, etc.
+        If with_entity_details is True, also includes source_name, source_type, target_name, and target_type.
+    """
+    logger.info(f">>> 🛠️ Tool: 'list_all_relationships' called with limit={limit}, with_entity_details={with_entity_details}")
+    if not data_service:
+        return []
+    try:
+        return data_service.list_all_relationships(limit=limit, with_entity_details=with_entity_details)
+    except Exception as e:
+        logger.error(f"Error listing relationships: {e}")
+        return []
+
+# ===== CRUD OPERATIONS FOR VENDORS =====
+
+@mcp.tool()
+def create_vendor(name: str, description: str = None, properties: Dict[str, Any] = None) -> str:
+    """
+    Creates a new vendor in the privacy data governance graph.
+    
+    Args:
+        name: Name of the vendor (required)
+        description: Optional description of the vendor
+        properties: Optional dictionary of additional properties
+    
+    Returns:
+        The unique vendor_id of the created vendor
+    """
+    logger.info(f">>> 🛠️ Tool: 'create_vendor' called with name='{name}'")
+    if not data_service:
+        return ""
+    try:
+        # Ensure properties is a valid JSON-serializable dictionary
+        json_properties = None
+        if properties:
+            try:
+                # Convert properties to a JSON string to ensure it's serializable
+                json_properties = json.dumps(properties)
+                # Then parse it back to a dict to ensure it's valid
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(properties)}
+                
+        return data_service.create_vendor(name=name, description=description, properties=json_properties)
+    except Exception as e:
+        logger.error(f"Error creating vendor: {e}")
+        return ""
+
+@mcp.tool()
+def get_vendor(vendor_id: str) -> Dict[str, Any]:
+    """
+    Retrieves details of a specific vendor by its ID.
+    
+    Args:
+        vendor_id: The unique identifier of the vendor
+    
+    Returns:
+        A dictionary with the vendor's details or empty dict if not found
+    """
+    logger.info(f">>> 🛠️ Tool: 'get_vendor' called with vendor_id='{vendor_id}'")
+    if not data_service:
+        return {}
+    try:
+        result = data_service.get_vendor(vendor_id)
+        return result if result else {}
+    except Exception as e:
+        logger.error(f"Error getting vendor: {e}")
+        return {}
+
+@mcp.tool()
+def update_vendor(vendor_id: str, name: str = None, description: str = None, properties: Dict[str, Any] = None) -> bool:
+    """
+    Updates an existing vendor with new information.
+    
+    Args:
+        vendor_id: The unique identifier of the vendor to update
+        name: Optional new name for the vendor
+        description: Optional new description for the vendor
+        properties: Optional new properties dictionary
+    
+    Returns:
+        True if the update was successful, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'update_vendor' called with vendor_id='{vendor_id}'")
+    if not data_service:
+        return False
+    try:
+        # Ensure properties is a valid JSON-serializable dictionary
+        json_properties = None
+        if properties:
+            try:
+                # Convert properties to a JSON string to ensure it's serializable
+                json_properties = json.dumps(properties)
+                # Then parse it back to a dict to ensure it's valid
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(properties)}
+                
+        return data_service.update_vendor(vendor_id=vendor_id, name=name, description=description, properties=json_properties)
+    except Exception as e:
+        logger.error(f"Error updating vendor: {e}")
+        return False
+
+@mcp.tool()
+def delete_vendor(vendor_id: str) -> bool:
+    """
+    Deletes a vendor from the privacy data governance graph.
+    
+    Args:
+        vendor_id: The unique identifier of the vendor to delete
+    
+    Returns:
+        True if the deletion was successful, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'delete_vendor' called with vendor_id='{vendor_id}'")
+    if not data_service:
+        return False
+    try:
+        return data_service.delete_vendor(vendor_id)
+    except Exception as e:
+        logger.error(f"Error deleting vendor: {e}")
+        return False
+
+@mcp.tool()
+def list_vendors(limit: int = 100) -> List[Dict[str, Any]]:
+    """
+    Retrieves all vendors from the privacy data governance graph.
+    
+    Args:
+        limit: Maximum number of vendors to return (default: 100)
+    
+    Returns:
+        A list of vendor dictionaries with details like vendor_id, name, description, properties, etc.
+    """
+    logger.info(f">>> 🛠️ Tool: 'list_vendors' called with limit={limit}")
+    if not data_service:
+        return []
+    try:
+        return data_service.list_vendors(limit=limit)
+    except Exception as e:
+        logger.error(f"Error listing vendors: {e}")
+        return []
+
+# ===== CRUD OPERATIONS FOR DATA SUBJECT TYPES =====
+
+@mcp.tool()
+def create_data_subject_type(name: str, description: str = None, properties: Dict[str, Any] = None) -> str:
+    """
+    Creates a new data subject type in the privacy data governance graph.
+    
+    Args:
+        name: Name of the data subject type (required)
+        description: Optional description of the data subject type
+        properties: Optional dictionary of additional properties
+    
+    Returns:
+        The unique data_subject_type_id of the created data subject type
+    """
+    logger.info(f">>> 🛠️ Tool: 'create_data_subject_type' called with name='{name}'")
+    if not data_service:
+        return ""
+    try:
+        # Ensure properties is a valid JSON-serializable dictionary
+        json_properties = None
+        if properties:
+            try:
+                # Convert properties to a JSON string to ensure it's serializable
+                json_properties = json.dumps(properties)
+                # Then parse it back to a dict to ensure it's valid
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(properties)}
+                
+        return data_service.create_data_subject_type(name=name, description=description, properties=json_properties)
+    except Exception as e:
+        logger.error(f"Error creating data subject type: {e}")
+        return ""
+
+@mcp.tool()
+def get_data_subject_type(data_subject_type_id: str) -> Dict[str, Any]:
+    """
+    Retrieves details of a specific data subject type by its ID.
+    
+    Args:
+        data_subject_type_id: The unique identifier of the data subject type
+    
+    Returns:
+        A dictionary with the data subject type's details or empty dict if not found
+    """
+    logger.info(f">>> 🛠️ Tool: 'get_data_subject_type' called with data_subject_type_id='{data_subject_type_id}'")
+    if not data_service:
+        return {}
+    try:
+        result = data_service.get_data_subject_type(data_subject_type_id)
+        return result if result else {}
+    except Exception as e:
+        logger.error(f"Error getting data subject type: {e}")
+        return {}
+
+@mcp.tool()
+def update_data_subject_type(data_subject_type_id: str, name: str = None, description: str = None, properties: Dict[str, Any] = None) -> bool:
+    """
+    Updates an existing data subject type with new information.
+    
+    Args:
+        data_subject_type_id: The unique identifier of the data subject type to update
+        name: Optional new name for the data subject type
+        description: Optional new description for the data subject type
+        properties: Optional new properties dictionary
+    
+    Returns:
+        True if the update was successful, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'update_data_subject_type' called with data_subject_type_id='{data_subject_type_id}'")
+    if not data_service:
+        return False
+    try:
+        # Ensure properties is a valid JSON-serializable dictionary
+        json_properties = None
+        if properties:
+            try:
+                # Convert properties to a JSON string to ensure it's serializable
+                json_properties = json.dumps(properties)
+                # Then parse it back to a dict to ensure it's valid
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(properties)}
+                
+        return data_service.update_data_subject_type(data_subject_type_id=data_subject_type_id, name=name, description=description, properties=json_properties)
+    except Exception as e:
+        logger.error(f"Error updating data subject type: {e}")
+        return False
+
+@mcp.tool()
+def delete_data_subject_type(data_subject_type_id: str) -> bool:
+    """
+    Deletes a data subject type from the privacy data governance graph.
+    
+    Args:
+        data_subject_type_id: The unique identifier of the data subject type to delete
+    
+    Returns:
+        True if the deletion was successful, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'delete_data_subject_type' called with data_subject_type_id='{data_subject_type_id}'")
+    if not data_service:
+        return False
+    try:
+        return data_service.delete_data_subject_type(data_subject_type_id)
+    except Exception as e:
+        logger.error(f"Error deleting data subject type: {e}")
+        return False
+
+@mcp.tool()
+def list_data_subject_types(limit: int = 100) -> List[Dict[str, Any]]:
+    """
+    Retrieves all data subject types from the privacy data governance graph.
+    
+    Args:
+        limit: Maximum number of data subject types to return (default: 100)
+    
+    Returns:
+        A list of data subject type dictionaries with details like data_subject_type_id, name, description, properties, etc.
+    """
+    logger.info(f">>> 🛠️ Tool: 'list_data_subject_types' called with limit={limit}")
+    if not data_service:
+        return []
+    try:
+        return data_service.list_data_subject_types(limit=limit)
+    except Exception as e:
+        logger.error(f"Error listing data subject types: {e}")
+        return []
+
 # For local development, run the FastMCP server directly
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))

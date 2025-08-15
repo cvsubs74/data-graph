@@ -856,7 +856,7 @@ class DataGraphService:
                 name_to_id_map[row[1]] = row[0]
         return name_to_id_map
 
-    def _get_entity_details_direct(self, snapshot, entity_ids: list) -> dict:
+    def _get_entity_details_direct(self, transaction, entity_ids: list) -> dict:
         if not entity_ids:
             return {}
         entity_tables = {
@@ -868,9 +868,85 @@ class DataGraphService:
             sql = f"SELECT {id_column}, name, properties FROM {table} WHERE {id_column} IN UNNEST(@entity_ids)"
             params = {"entity_ids": entity_ids}
             param_types_dict = {"entity_ids": param_types.Array(param_types.STRING)}
-            results = snapshot.execute_sql(sql, params=params, param_types=param_types_dict)
+            results = transaction.execute_sql(sql, params=params, param_types=param_types_dict)
             for row in results:
                 fetched_details[row[0]] = {"name": row[1], "type": table[:-1], "properties": row[2]}
         return fetched_details
+
+    def list_all_relationships(self, limit: int = 1000, with_entity_details: bool = False) -> list:
+        """List all relationships in the database with optional entity details.
+        
+        Args:
+            limit: Maximum number of relationships to return
+            with_entity_details: If True, include entity details (name, type) for source and target
+            
+        Returns:
+            List of relationship dictionaries
+        """
+        try:
+            # First, get all relationships
+            relationships = []
+            entity_ids = set()
+            
+            with self.database.snapshot() as snapshot:
+                sql = "SELECT source_id, target_id, relationship_type, properties, created_at, updated_at FROM EntityRelationships LIMIT @limit"
+                results = snapshot.execute_sql(sql, params={"limit": limit}, param_types={"limit": param_types.INT64})
+                
+                # Collect all relationships and entity IDs
+                for row in results:
+                    source_id = row[0]
+                    target_id = row[1]
+                    
+                    relationship = {
+                        "source_id": source_id,
+                        "target_id": target_id,
+                        "relationship_type": row[2],
+                        "properties": row[3],
+                        "created_at": row[4].isoformat() if row[4] else None,
+                        "updated_at": row[5].isoformat() if row[5] else None
+                    }
+                    
+                    relationships.append(relationship)
+                    
+                    if with_entity_details:
+                        entity_ids.add(source_id)
+                        entity_ids.add(target_id)
+            
+            # If entity details are requested, fetch them in a separate snapshot
+            if with_entity_details and entity_ids:
+                entity_details = {}
+                
+                # Create a new snapshot for entity details
+                with self.database.snapshot() as entity_snapshot:
+                    entity_tables = {
+                        "Assets": "asset_id", "ProcessingActivities": "activity_id", "DataElements": "element_id",
+                        "DataSubjectTypes": "subject_id", "Vendors": "vendor_id"
+                    }
+                    
+                    entity_id_list = list(entity_ids)
+                    
+                    for table, id_column in entity_tables.items():
+                        sql = f"SELECT {id_column}, name, properties FROM {table} WHERE {id_column} IN UNNEST(@entity_ids)"
+                        params = {"entity_ids": entity_id_list}
+                        param_types_dict = {"entity_ids": param_types.Array(param_types.STRING)}
+                        
+                        results = entity_snapshot.execute_sql(sql, params=params, param_types=param_types_dict)
+                        for row in results:
+                            entity_details[row[0]] = {"name": row[1], "type": table[:-1], "properties": row[2]}
+                
+                # Add entity details to relationships
+                for relationship in relationships:
+                    source_details = entity_details.get(relationship["source_id"], {})
+                    target_details = entity_details.get(relationship["target_id"], {})
+                    
+                    relationship["source_name"] = source_details.get("name", "Unknown")
+                    relationship["source_type"] = source_details.get("type", "Unknown")
+                    relationship["target_name"] = target_details.get("name", "Unknown")
+                    relationship["target_type"] = target_details.get("type", "Unknown")
+            
+            return relationships
+        except Exception as e:
+            print(f"Error listing relationships: {e}")
+            return []
 
 
