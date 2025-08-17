@@ -25,6 +25,49 @@ except Exception as e:
     data_service = None
 
 @mcp.tool()
+def find_similar_entities(table_name: str, name: str, description: str = "", limit: int = 5) -> List[Dict[str, Any]]:
+    """
+    Finds semantically similar entities in the specified table using vector embeddings.
+    
+    Args:
+        table_name: The table to search in (one of: "Assets", "ProcessingActivities", "DataElements", "DataSubjectTypes", "Vendors")
+        name: The name to use for similarity search
+        description: Optional description to enhance the similarity search
+        limit: Maximum number of results to return (default: 5)
+    
+    Returns:
+        A list of dictionaries containing similar entities with their similarity scores
+    """
+    logger.info(f">>> 🛠️ Tool: 'find_similar_entities' called for table '{table_name}'")
+    if not data_service:
+        return []
+    
+    # Map table names to their ID column names
+    id_column_map = {
+        "Assets": "asset_id",
+        "ProcessingActivities": "activity_id",
+        "DataElements": "element_id",
+        "DataSubjectTypes": "subject_id",
+        "Vendors": "vendor_id"
+    }
+    
+    if table_name not in id_column_map:
+        logger.error(f"Invalid table name: {table_name}")
+        return []
+    
+    try:
+        return data_service.find_similar_entities(
+            table_name=table_name,
+            id_column=id_column_map[table_name],
+            name=name,
+            description=description,
+            limit=limit
+        )
+    except Exception as e:
+        logger.error(f"Error finding similar entities: {e}")
+        return []
+
+@mcp.tool()
 def create_asset(name: str, description: str = None, properties: Dict[str, Any] = None) -> str:
     """
     Creates a new asset in the privacy data governance graph.
@@ -217,6 +260,61 @@ def get_processing_activity(activity_id: str) -> Dict[str, Any]:
         return {}
 
 @mcp.tool()
+def update_processing_activity(activity_id: str, name: str = None, description: str = None, purpose: str = None, legal_basis: str = None, properties: Dict[str, Any] = None) -> bool:
+    """
+    Updates an existing processing activity with new information.
+    
+    Args:
+        activity_id: The unique identifier of the processing activity to update
+        name: Optional new name for the processing activity
+        description: Optional new description for the processing activity
+        purpose: Optional new purpose for the processing activity
+        legal_basis: Optional new legal basis for the processing activity
+        properties: Optional new properties dictionary
+    
+    Returns:
+        True if the update was successful, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'update_processing_activity' called with activity_id='{activity_id}'")
+    if not data_service:
+        return False
+    try:
+        # Merge purpose and legal_basis into properties
+        merged_properties = {}
+        if properties and isinstance(properties, dict):
+            merged_properties.update(properties)
+        elif properties:
+            merged_properties["raw_properties"] = str(properties)
+            
+        # Add purpose and legal_basis to properties
+        if purpose:
+            merged_properties["purpose"] = purpose
+        if legal_basis:
+            merged_properties["legal_basis"] = legal_basis
+            
+        # Ensure properties is JSON serializable
+        json_properties = None
+        if merged_properties:
+            try:
+                # Convert to JSON string and back to ensure it's serializable
+                json_properties = json.dumps(merged_properties)
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(merged_properties)}
+            
+        return data_service.update_processing_activity(
+            activity_id=activity_id, 
+            name=name, 
+            description=description, 
+            properties=json_properties
+        )
+    except Exception as e:
+        logger.error(f"Error updating processing activity: {e}")
+        return False
+
+@mcp.tool()
 def list_processing_activities(limit: int = 100) -> List[Dict[str, Any]]:
     """
     Retrieves all processing activities from the privacy data governance graph.
@@ -323,6 +421,57 @@ def get_data_element(element_id: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error getting data element: {e}")
         return {}
+
+@mcp.tool()
+def update_data_element(element_id: str, name: str = None, description: str = None, data_type: str = None, properties: Dict[str, Any] = None) -> bool:
+    """
+    Updates an existing data element with new information.
+    
+    Args:
+        element_id: The unique identifier of the data element to update
+        name: Optional new name for the data element
+        description: Optional new description for the data element
+        data_type: Optional new data type (e.g., PII, sensitive)
+        properties: Optional new properties dictionary
+    
+    Returns:
+        True if the update was successful, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'update_data_element' called with element_id='{element_id}'")
+    if not data_service:
+        return False
+    try:
+        # Merge data_type into properties if provided
+        merged_properties = {}
+        if properties and isinstance(properties, dict):
+            merged_properties.update(properties)
+        elif properties:
+            merged_properties["raw_properties"] = str(properties)
+            
+        if data_type:
+            merged_properties['data_type'] = data_type
+            
+        # Ensure properties is JSON serializable
+        json_properties = None
+        if merged_properties:
+            try:
+                # Convert to JSON string and back to ensure it's serializable
+                json_properties = json.dumps(merged_properties)
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(merged_properties)}
+            
+        return data_service.update_data_element(
+            element_id=element_id, 
+            name=name, 
+            description=description, 
+            properties=json_properties
+        )
+    except Exception as e:
+        logger.error(f"Error updating data element: {e}")
+        return False
 
 @mcp.tool()
 def list_data_elements(limit: int = 100) -> List[Dict[str, Any]]:
@@ -438,6 +587,60 @@ def get_relationships(entity_id: str) -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Error getting relationships: {e}")
         return []
+
+@mcp.tool()
+def update_relationship(source_id: str, target_id: str, relationship_type: str = None, properties: Dict[str, Any] = None) -> bool:
+    """
+    Updates an existing relationship between two entities.
+    
+    Args:
+        source_id: ID of the source entity
+        target_id: ID of the target entity
+        relationship_type: Optional new type of relationship
+        properties: Optional dictionary of additional properties
+    
+    Returns:
+        True if the relationship was updated successfully, False otherwise
+    """
+    logger.info(f">>> 🛠️ Tool: 'update_relationship' called: {source_id} -> {target_id}")
+    if not data_service:
+        return False
+    try:
+        # Ensure properties is a valid dictionary
+        clean_properties = {}
+        if properties and isinstance(properties, dict):
+            # Convert any non-string keys to strings
+            for k, v in properties.items():
+                if isinstance(v, (str, int, float, bool)):
+                    clean_properties[str(k)] = v
+                else:
+                    # Convert complex objects to strings
+                    clean_properties[str(k)] = str(v)
+        elif properties:
+            # Handle non-dict properties
+            clean_properties["raw_properties"] = str(properties)
+            
+        # Ensure properties is JSON serializable
+        json_properties = None
+        if clean_properties:
+            try:
+                # Convert to JSON string and back to ensure it's serializable
+                json_properties = json.dumps(clean_properties)
+                json_properties = json.loads(json_properties)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Properties not JSON serializable: {e}")
+                # Fall back to a simple string representation
+                json_properties = {"raw_properties": str(clean_properties)}
+            
+        return data_service.update_relationship(
+            source_id=source_id,
+            target_id=target_id,
+            relationship_type=relationship_type,
+            properties=json_properties
+        )
+    except Exception as e:
+        logger.error(f"Error updating relationship: {e}")
+        return False
 
 @mcp.tool()
 def delete_relationship(source_id: str, target_id: str) -> bool:

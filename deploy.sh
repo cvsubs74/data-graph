@@ -96,14 +96,66 @@ deploy_mcp() {
   # Environment variables
   local env_vars="GCP_PROJECT=$PROJECT_ID"
   
+  # Create a service account for the MCP server if it doesn't exist
+  local service_account="mcp-server-sa"
+  local service_account_email="${service_account}@${PROJECT_ID}.iam.gserviceaccount.com"
+  
+  echo "Checking if service account ${service_account_email} exists..."
+  if ! gcloud iam service-accounts describe "${service_account_email}" --project="$PROJECT_ID" &>/dev/null; then
+    echo "Creating service account ${service_account_email}..."
+    gcloud iam service-accounts create "${service_account}" \
+      --project="$PROJECT_ID" \
+      --display-name="MCP Server Service Account"
+      
+    # Wait a moment for the service account to be fully created
+    echo "Waiting for service account to be fully provisioned..."
+    sleep 5
+  fi
+  
+  # Verify the service account exists before granting roles
+  if gcloud iam service-accounts describe "${service_account_email}" --project="$PROJECT_ID" &>/dev/null; then
+    # Grant necessary roles to the service account
+    echo "Granting necessary roles to service account..."
+    
+    echo "Granting aiplatform.user role..."
+    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+      --member="serviceAccount:${service_account_email}" \
+      --role="roles/aiplatform.user" \
+      --quiet
+    
+    echo "Granting secretmanager.secretAccessor role..."
+    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+      --member="serviceAccount:${service_account_email}" \
+      --role="roles/secretmanager.secretAccessor" \
+      --quiet
+    
+    echo "Granting spanner.databaseUser role..."
+    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+      --member="serviceAccount:${service_account_email}" \
+      --role="roles/spanner.databaseUser" \
+      --quiet
+  else
+    echo "ERROR: Service account ${service_account_email} could not be created or found."
+    echo "Continuing with deployment using default service account..."
+    service_account_email=""
+  fi
+  
   echo "Deploying MCP server to Google Cloud Run..."
+  
+  # Only include service account if it was successfully created
+  local service_account_param=""
+  if [ -n "${service_account_email}" ]; then
+    service_account_param="--service-account=${service_account_email}"
+  fi
+  
   gcloud run deploy "mcp-server" \
     --project="$PROJECT_ID" \
     --region="$REGION" \
     --source="$build_dir" \
     --set-env-vars="$env_vars" \
+    ${service_account_param} \
     --allow-unauthenticated \
-    --memory=1Gi \
+    --memory=2Gi \
     --cpu=1 \
     --timeout=540s \
     --port=8080 \
@@ -124,26 +176,17 @@ deploy_backend() {
     echo "Starting backend deployment..."
     
     if [ -z "$specific_function" ]; then
-        # Deploy all functions in parallel
-        echo "Deploying all backend functions in parallel..."
+        # Deploy MCP server
+        echo "Deploying MCP server..."
         
-        deploy_function "ingest_function" "ingest_document" "" &
-        local ingest_pid=$!
+        deploy_mcp
         
-        deploy_mcp &
-        local mcp_pid=$!
+        echo "MCP server deployed successfully!"
         
-        # Wait for all deployments to finish
-        echo "Waiting for all backend functions to deploy..."
-        wait $ingest_pid $mcp_pid
-        echo "All backend functions deployed successfully!"
-        
-    elif [ "$specific_function" == "ingest" ]; then
-        deploy_function "ingest_function" "ingest_document" ""
     elif [ "$specific_function" == "mcp" ]; then
         deploy_mcp
     else
-        echo "Error: Unknown function '$specific_function'. Valid options are: ingest, mcp"
+        echo "Error: Unknown function '$specific_function'. Valid option is: mcp"
         exit 1
     fi
 }
@@ -154,16 +197,10 @@ test_deployment() {
     echo "Testing deployed functions..."
     echo "-----------------------------------------------------"
     
-    # Get function URLs
-    local ingest_url=$(gcloud functions describe ingest_function --region=$REGION --project=$PROJECT_ID --format="value(serviceConfig.uri)" 2>/dev/null || echo "")
+    # Get function URL
     local mcp_url=$(gcloud run services describe mcp-server --region=$REGION --project=$PROJECT_ID --format="value(status.url)" 2>/dev/null || echo "")
     
     echo "Function URLs:"
-    if [ -n "$ingest_url" ]; then
-        echo "  Ingest Function: $ingest_url"
-        echo "  Testing ingest function health..."
-        curl -s "$ingest_url" -X OPTIONS || echo "  Health check failed"
-    fi
     
     if [ -n "$mcp_url" ]; then
         echo "  MCP Server (Cloud Run): $mcp_url"
@@ -179,17 +216,15 @@ show_usage() {
     echo "Usage: $0 [backend [function_name]|test|help]"
     echo ""
     echo "Commands:"
-    echo "  backend          - Deploy all backend functions (ingest + mcp)"
-    echo "  backend ingest   - Deploy only the ingest function"
-    echo "  backend mcp      - Deploy only the MCP function"
+    echo "  backend          - Deploy MCP server"
+    echo "  backend mcp      - Deploy the MCP server"
     echo "  test            - Test deployed functions"
     echo "  help            - Show this help message"
     echo ""
     echo "Examples:"
-    echo "  ./deploy.sh                    # Deploy all backend functions"
-    echo "  ./deploy.sh backend            # Deploy all backend functions"
-    echo "  ./deploy.sh backend ingest     # Deploy only ingest function"
-    echo "  ./deploy.sh backend mcp        # Deploy only MCP function"
+    echo "  ./deploy.sh                    # Deploy MCP server"
+    echo "  ./deploy.sh backend            # Deploy MCP server"
+    echo "  ./deploy.sh backend mcp        # Deploy MCP server"
     echo "  ./deploy.sh test              # Test deployed functions"
 }
 

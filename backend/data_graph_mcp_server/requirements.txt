@@ -7,3 +7,4 @@ google-cloud-secret-manager
 
 # AI & Machine Learning
 vertexai
+numpy
