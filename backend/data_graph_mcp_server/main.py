@@ -819,6 +819,68 @@ def list_vendors(limit: int = 100) -> List[Dict[str, Any]]:
         logger.error(f"Error listing vendors: {e}")
         return []
 
+# ===== METADATA TOOLS =====
+
+@mcp.tool()
+def get_entity_types() -> List[Dict[str, str]]:
+    """
+    Retrieves all available entity types in the system with their descriptions.
+    
+    This tool helps understand what types of entities can be created in the privacy data governance graph.
+    
+    Returns:
+        A list of entity type dictionaries with name and description.
+    """
+    logger.info(f">>> 🛠️ Tool: 'get_entity_types' called")
+    if not data_service:
+        return []
+    try:
+        return data_service.get_entity_types()
+    except Exception as e:
+        logger.error(f"Error getting entity types: {e}")
+        return []
+
+@mcp.tool()
+def get_entity_parameters(entity_type: str) -> List[Dict[str, Any]]:
+    """
+    Retrieves the parameters (fields) for a specific entity type.
+    
+    This tool helps understand what information should be provided when creating or updating entities of a specific type.
+    
+    Args:
+        entity_type: The type of entity to get parameters for (e.g., DataSubjectType, DataElement, ProcessingActivity)
+    
+    Returns:
+        A list of parameter dictionaries with name, description, and required flag.
+    """
+    logger.info(f">>> 🛠️ Tool: 'get_entity_parameters' called with entity_type='{entity_type}'")
+    if not data_service:
+        return []
+    try:
+        return data_service.get_entity_parameters(entity_type)
+    except Exception as e:
+        logger.error(f"Error getting entity parameters: {e}")
+        return []
+
+@mcp.tool()
+def get_relationship_ontology() -> List[Dict[str, str]]:
+    """
+    Retrieves the relationship ontology defining valid relationships between entity types.
+    
+    This tool helps understand what types of relationships can be created between different entity types.
+    
+    Returns:
+        A list of relationship dictionaries with source_type, target_type, relationship_type, and description.
+    """
+    logger.info(f">>> 🛠️ Tool: 'get_relationship_ontology' called")
+    if not data_service:
+        return []
+    try:
+        return data_service.get_relationship_ontology()
+    except Exception as e:
+        logger.error(f"Error getting relationship ontology: {e}")
+        return []
+
 # ===== CRUD OPERATIONS FOR DATA SUBJECT TYPES =====
 
 @mcp.tool()
@@ -908,7 +970,7 @@ def update_data_subject_type(data_subject_type_id: str, name: str = None, descri
                 # Fall back to a simple string representation
                 json_properties = {"raw_properties": str(properties)}
                 
-        return data_service.update_data_subject_type(data_subject_type_id=data_subject_type_id, name=name, description=description, properties=json_properties)
+        return data_service.update_data_subject_type(subject_id=data_subject_type_id, name=name, description=description, properties=json_properties)
     except Exception as e:
         logger.error(f"Error updating data subject type: {e}")
         return False

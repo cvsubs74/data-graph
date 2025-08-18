@@ -808,12 +808,13 @@ class DataGraphService:
     def list_all_relationships(self, limit: int = 1000, with_entity_details: bool = False) -> list:
         """List all relationships in the database with optional entity details."""
         try:
+            # First snapshot: Get all relationships
             relationships = []
             entity_ids = set()
             
-            with self.database.snapshot() as snapshot:
+            with self.database.snapshot() as snapshot1:
                 sql = "SELECT source_id, target_id, relationship_type, properties, created_at, updated_at FROM EntityRelationships LIMIT @limit"
-                results = snapshot.execute_sql(sql, params={"limit": limit}, param_types={"limit": param_types.INT64})
+                results = snapshot1.execute_sql(sql, params={"limit": limit}, param_types={"limit": param_types.INT64})
                 
                 for row in results:
                     source_id, target_id = row[0], row[1]
@@ -826,6 +827,7 @@ class DataGraphService:
                         entity_ids.add(source_id)
                         entity_ids.add(target_id)
             
+            # Second snapshot: Get entity details if needed
             if with_entity_details and entity_ids:
                 entity_details = {}
                 with self.database.snapshot() as entity_snapshot:
@@ -853,4 +855,122 @@ class DataGraphService:
             return relationships
         except Exception as e:
             print(f"Error listing relationships: {e}")
+            return []
+            
+    # ===== METADATA METHODS =====
+    
+    def get_entity_types(self) -> list:
+        """Get all available entity types in the system.
+        
+        Returns:
+            A list of entity type dictionaries with name and description.
+        """
+        try:
+            entity_types = []
+            
+            # Query the EntityTypes table to get all entity types
+            with self.database.snapshot() as snapshot:
+                sql = "SELECT name, description, table_name, id_column FROM EntityTypes ORDER BY name"
+                results = snapshot.execute_sql(sql)
+                
+                for row in results:
+                    entity_types.append({
+                        "name": row[0],
+                        "description": row[1],
+                        "table_name": row[2],
+                        "id_column": row[3]
+                    })
+            
+            return entity_types
+        except Exception as e:
+            print(f"Error getting entity types: {e}")
+            return []
+    
+    def get_entity_parameters(self, entity_type: str) -> list:
+        """Get the parameters (fields) for a specific entity type.
+        
+        Args:
+            entity_type: The type of entity to get parameters for
+            
+        Returns:
+            A list of parameter dictionaries with name, description, and required flag.
+        """
+        try:
+            parameters = []
+            
+            # First, get the type_id for the requested entity type
+            type_id = None
+            with self.database.snapshot() as snapshot:
+                sql = "SELECT type_id FROM EntityTypes WHERE name = @entity_type"
+                params = {"entity_type": entity_type}
+                param_types_dict = {"entity_type": param_types.STRING}
+                results = snapshot.execute_sql(sql, params=params, param_types=param_types_dict)
+                
+                for row in results:
+                    type_id = row[0]
+                    break
+            
+            # If we found the type_id, query for its properties
+            if type_id:
+                with self.database.snapshot() as snapshot:
+                    sql = """SELECT property_name, description, data_type, is_required 
+                             FROM EntityTypeProperties 
+                             WHERE type_id = @type_id 
+                             ORDER BY is_required DESC, property_name"""
+                    params = {"type_id": type_id}
+                    param_types_dict = {"type_id": param_types.STRING}
+                    results = snapshot.execute_sql(sql, params=params, param_types=param_types_dict)
+                    
+                    for row in results:
+                        parameters.append({
+                            "name": row[0],
+                            "description": row[1],
+                            "data_type": row[2],
+                            "required": row[3]
+                        })
+            
+            return parameters
+        except Exception as e:
+            print(f"Error getting entity parameters: {e}")
+            return []
+    
+    def get_relationship_ontology(self) -> list:
+        """Get the relationship ontology defining valid relationships between entity types.
+        
+        Returns:
+            A list of relationship dictionaries with source_type, target_type, relationship_type, and description.
+        """
+        try:
+            ontology = []
+            
+            # Query the RelationshipOntology table to get all defined relationships
+            with self.database.snapshot() as snapshot:
+                sql = """
+                SELECT 
+                    s.name as source_type, 
+                    t.name as target_type, 
+                    ro.relationship_type, 
+                    ro.description
+                FROM 
+                    RelationshipOntology ro
+                JOIN 
+                    EntityTypes s ON ro.source_type_id = s.type_id
+                JOIN 
+                    EntityTypes t ON ro.target_type_id = t.type_id
+                ORDER BY 
+                    s.name, t.name, ro.relationship_type
+                """
+                results = snapshot.execute_sql(sql)
+                
+                for row in results:
+                    ontology.append({
+                        "source_type": row[0],
+                        "target_type": row[1],
+                        "relationship_type": row[2],
+                        "description": row[3]
+                    })
+            
+            return ontology
+        except Exception as e:
+            print(f"Error getting relationship ontology: {e}")
             return []

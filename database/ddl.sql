@@ -17,6 +17,8 @@ DROP INDEX IF EXISTS DataSubjectTypesByName;
 DROP INDEX IF EXISTS DataElementsByName;
 DROP INDEX IF EXISTS ProcessingActivitiesByName;
 DROP INDEX IF EXISTS AssetsByName;
+DROP INDEX IF EXISTS DataSubjectTypeElementsBySubject;
+DROP INDEX IF EXISTS DataSubjectTypeElementsByElement;
 
 -- Drop tables with foreign key dependencies
 DROP TABLE IF EXISTS EntityTypeProperties;
@@ -27,6 +29,7 @@ DROP TABLE IF EXISTS EntityTypes;
 DROP TABLE IF EXISTS EntityRelationships;
 DROP TABLE IF EXISTS Assets;
 DROP TABLE IF EXISTS ProcessingActivities;
+DROP TABLE IF EXISTS DataSubjectTypeElements;
 DROP TABLE IF EXISTS DataElements;
 DROP TABLE IF EXISTS DataSubjectTypes;
 DROP TABLE IF EXISTS Vendors;
@@ -97,6 +100,21 @@ CREATE TABLE Vendors (
 ) PRIMARY KEY (vendor_id);
 
 CREATE INDEX VendorsByName ON Vendors(name);
+
+-- DataSubjectTypeElements Association Table
+CREATE TABLE DataSubjectTypeElements (
+    subject_id STRING(36) NOT NULL,
+    element_id STRING(36) NOT NULL,
+    description STRING(MAX),
+    properties JSON,
+    created_at TIMESTAMP NOT NULL OPTIONS(allow_commit_timestamp=true),
+    updated_at TIMESTAMP NOT NULL OPTIONS(allow_commit_timestamp=true),
+    CONSTRAINT FK_DataSubjectType FOREIGN KEY (subject_id) REFERENCES DataSubjectTypes (subject_id),
+    CONSTRAINT FK_DataElement FOREIGN KEY (element_id) REFERENCES DataElements (element_id)
+) PRIMARY KEY (subject_id, element_id);
+
+CREATE INDEX DataSubjectTypeElementsBySubject ON DataSubjectTypeElements(subject_id);
+CREATE INDEX DataSubjectTypeElementsByElement ON DataSubjectTypeElements(element_id);
 
 -- Generic Relationship Table
 CREATE TABLE EntityRelationships (

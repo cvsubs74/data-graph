@@ -169,6 +169,22 @@ deploy_mcp() {
   echo "-----------------------------------------------------"
 }
 
+# --- Deploy Data Graph Agent ---
+deploy_agent() {
+    echo "-----------------------------------------------------"
+    echo "Deploying Data Graph Agent..."
+    echo "-----------------------------------------------------"
+    
+    # Call the agent's deployment script
+    echo "Executing agent deployment script..."
+    
+    # Navigate to the script directory and execute it
+    (cd "$(dirname "$0")/agents/data_graph_agent" && ./deploy_to_cloud_run.sh)
+    
+    echo "Data Graph Agent deployment complete."
+    echo "-----------------------------------------------------"
+}
+
 # --- Main Deployment Logic ---
 deploy_backend() {
     local specific_function=$1
@@ -186,7 +202,7 @@ deploy_backend() {
     elif [ "$specific_function" == "mcp" ]; then
         deploy_mcp
     else
-        echo "Error: Unknown function '$specific_function'. Valid option is: mcp"
+        echo "Error: Unknown function '$specific_function'. Valid options are: mcp"
         exit 1
     fi
 }
@@ -213,18 +229,22 @@ test_deployment() {
 
 # --- Usage Information ---
 show_usage() {
-    echo "Usage: $0 [backend [function_name]|test|help]"
+    echo "Usage: $0 [backend [function_name]|agent|all|test|help]"
     echo ""
     echo "Commands:"
     echo "  backend          - Deploy MCP server"
     echo "  backend mcp      - Deploy the MCP server"
-    echo "  test            - Test deployed functions"
-    echo "  help            - Show this help message"
+    echo "  agent            - Deploy the Data Graph Agent"
+    echo "  all              - Deploy both MCP server and Data Graph Agent"
+    echo "  test             - Test deployed functions"
+    echo "  help             - Show this help message"
     echo ""
     echo "Examples:"
     echo "  ./deploy.sh                    # Deploy MCP server"
     echo "  ./deploy.sh backend            # Deploy MCP server"
     echo "  ./deploy.sh backend mcp        # Deploy MCP server"
+    echo "  ./deploy.sh agent             # Deploy Data Graph Agent"
+    echo "  ./deploy.sh all               # Deploy both MCP server and Data Graph Agent"
     echo "  ./deploy.sh test              # Test deployed functions"
 }
 
@@ -233,6 +253,12 @@ if [[ "$1" == "backend" && -z "$2" ]]; then
     deploy_backend
 elif [[ "$1" == "backend" && -n "$2" ]]; then
     deploy_backend "$2"
+elif [ "$1" == "agent" ]; then
+    deploy_agent
+elif [ "$1" == "all" ]; then
+    # Deploy both backend and agent
+    deploy_backend
+    deploy_agent
 elif [ "$1" == "test" ]; then
     test_deployment
 elif [ "$1" == "help" ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
