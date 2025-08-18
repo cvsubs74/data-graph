@@ -13,7 +13,7 @@ class AgentModel(BaseModel):
     """Agent model settings."""
 
     name: str = Field(default="data_graph_agent")
-    model: str = Field(default="gemini-2.5-flash-lite")
+    model: str = Field(default="gemini-2.5-flash")
 
 
 class Config(BaseSettings):
