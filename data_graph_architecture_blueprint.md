@@ -33,7 +33,11 @@ The most critical design decision is how to structure the agentic workflow. Whil
 | **Architecture** | A single `LlmAgent` responsible for the entire end-to-end process.                                        | A `SequentialAgent` that orchestrates two or more specialized `LlmAgent`s.                                       |
 | **Prompting Strategy** | One massive, monolithic prompt detailing every step, from metadata collection to relationship creation.      | Multiple, shorter, focused prompts. One for document analysis and another for graph construction.                |
 | **Cognitive Load** | High. The LLM must track its position in a long, multi-stage workflow, increasing the risk of errors or forgotten instructions ("context drift"). | Low per agent. Each agent has a clear, narrowly defined goal, improving reliability.                              |
-| **Maintainability** | Difficult to debug. A failure could be due to a misinterpretation of any of the numerous steps in the single prompt. | Easier to debug. If web scraping fails, the issue is clearly within the `DocumentAnalysisAgent`.                    |
+| **Maintainability** | Difficult to debug. A failure could be due to a misinterpretation of any of the numerous steps in the single prompt. | Easier to debug. If web scraping fails, the issue is clearly within the `DocumentAnalysisAgent`.               
+
+### Demos
+Single Agent: https://data-graph-agent-79797180773.us-central1.run.app
+Multi Agent: https://data-graph-multi-agent-79797180773.us-central1.run.app     |
 
 ### Deeper Dive: A Tale of Two Workflows
 
