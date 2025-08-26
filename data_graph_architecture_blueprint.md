@@ -87,14 +87,25 @@ This is the most critical metadata, defining the valid ways entities can be conn
 
 ## Metadata-Driven Conversations: A Dynamic Workflow
 
-A key pattern in this architecture is that the **conversation flow is completely driven by the metadata** defined in the system. The agent's line of questioning is not hardcoded in its prompt; it's dynamically generated based on the rules of the data graph.
+The agent's ability to hold a dynamic, intelligent conversation is a core pattern of this architecture, moving beyond the rigidity of traditional systems. This workflow is driven entirely by metadata, not by a hardcoded script.
 
-Unlike traditional systems that rely on static assessment templates, this agent-based approach is fully dynamic. The process is simple and powerful:
-1.  The agent identifies a new entity to be created (e.g., a 'Vendor').
-2.  It calls the **`get_entity_parameters(entity_type='Vendor')`** tool and learns from the returned metadata that `contact_email` is mandatory.
-3.  The agent then intelligently formulates a question to the user to capture this missing information.
+### The Old Way: The Static Template
 
-This makes the system incredibly flexible. If an administrator adds a new mandatory attribute to the 'Vendor' entity, the agent will **automatically** start asking for it—without any changes to the agent's code or prompts.
+Traditional systems, like assessment platforms, rely on static templates. A product manager and engineer must pre-define a rigid script of questions. If a new business requirement emerges (e.g., needing to track a new attribute for all vendors), the template itself must be manually updated and redeployed. This process is slow, brittle, and doesn't adapt to information that might already be present in a source document.
+
+### The New Way: The Dynamic Dialogue
+
+This agent-driven approach is fully dynamic, transforming a fixed questionnaire into an intelligent interview. The agent follows a simple but powerful three-step process for every entity it encounters:
+
+1.  **Discover**: The agent identifies a potential new entity in the source document, for example, a vendor named 'PaySecure'.
+2.  **Consult**: It immediately calls the **`get_entity_parameters(entity_type='Vendor')`** tool. The tool returns the "rules" for a Vendor from the central metadata repository—for instance, that `contact_email` is a **required** attribute and `dpa_signed` is an *optional* one.
+3.  **Reconcile & Inquire**: The agent first checks if the policy text already contains the required information. If not, it intelligently formulates a question to the user to capture the missing mandatory data. It may then ask about optional fields if appropriate.
+
+### The "Future-Proof" Advantage
+
+This makes the system incredibly flexible and "future-proof." If an administrator adds a new mandatory attribute like `privacy_contact_dl` to the 'Vendor' entity in the database, the agent will **automatically** start asking for that information during its next analysis—without any changes to the agent's code or prompts. The conversation logic is completely decoupled from the agent's core programming.
+
+This is the difference between a call center agent who can only read from a fixed script and an experienced detective who knows what questions to ask based on the clues they uncover. The agent doesn't follow a script; it follows the data.
 
 ---
 
