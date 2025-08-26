@@ -37,7 +37,8 @@ The most critical design decision is how to structure the agentic workflow. Whil
 
 ### Demos
 Single Agent: https://data-graph-agent-79797180773.us-central1.run.app
-Multi Agent: https://data-graph-multi-agent-79797180773.us-central1.run.app     |
+
+Multi Agent: https://data-graph-multi-agent-79797180773.us-central1.run.app
 
 ### Deeper Dive: A Tale of Two Workflows
 
