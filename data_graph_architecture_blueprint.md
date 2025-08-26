@@ -83,7 +83,19 @@ This is the most critical metadata, defining the valid ways entities can be conn
 * `Asset` **TRANSFERS_DATA_TO** `Vendor`
 * `ProcessingActivity` **ASSISTED_BY** `Vendor`
 
----
+### The Power of Embeddings: Enabling Semantic Search
+
+A core principle of the database design is the inclusion of a vector embedding in every primary entity record. As seen in the DDL, each key table (`Assets`, `Vendors`, `ProcessingActivities`, etc.) contains an **`embedding ARRAY<FLOAT64>`** column. This is the engine that powers the system's semantic intelligence.
+
+**Why it matters:** Privacy policies use varied language. A document might mention a "payment processor," "billing partner," or "credit card handler." A simple keyword search would see these as three different things. Vector embeddings allow the system to understand that these phrases are **semantically related** because their meanings are conceptually close.
+
+**How it works:**
+1.  When a new entity like a Vendor is created, its name and description are converted into a numerical vector by an embedding model.
+2.  This vector is stored in the `embedding` column for that record.
+3.  When the agent later encounters a new term (e.g., "billing partner") and calls the **`find_similar_entities()`** tool, the tool generates a vector for this new term.
+4.  It then performs a high-speed vector similarity search (like cosine similarity) against all the stored embeddings in the database to find the closest conceptual matches, enabling intelligent de-duplication.
+
+This is the difference between searching a library for a book by its exact title versus asking a librarian for "books *about* artificial intelligence," who can then find relevant books with many different titles.
 
 ## Metadata-Driven Conversations: A Dynamic Workflow
 
