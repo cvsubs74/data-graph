@@ -89,51 +89,63 @@ This makes the system incredibly flexible. If an administrator adds a new mandat
 
 ## A Practical Example: Processing a Privacy Policy (Expanded)
 
-Here is a more detailed walkthrough of the multi-agent pipeline processing the sample policy.
+Here is a more detailed walkthrough of the multi-agent pipeline processing the sample policy, now covering a wider range of entities and their relationships.
 
 ### The Source Document: Comprehensive Privacy Policy
 > **...**
+> ## 1. Introduction
+> ...Our main data processing activities include providing our **SaaS Platform**, **marketing**, and **customer support**. Our primary data storage is the **Production AWS RDS**... User authentication is a key processing activity that uses this database.
 > ## 2. Data We Collect
-> - **Financial Information**: For billing, we process credit card numbers via our payment vendor, **PaySecure**.
-> - **Technical Information**: This is handled by our internal logging service, **LogStash**, and also sent to **AnalyticsCorp**...
-> ## 3. How We Use Your Data
-> - **Customer Support**: To assist with user inquiries, handled via the **Zendesk CRM**.
+> - **Contact Information**: We collect **user names** and **email addresses** during account setup. This data belongs to our **Customers**.
+> - **Technical Information**: ...sent to **AnalyticsCorp** for product improvement.
+> ## 5. Data Subject Rights
+> Users, who are primarily **EU Customers** and **US-based Employees**, have the right to access...
 > **...**
 
 ### Step 1 & 2: Gaining Context and Parsing
 The **Web Analysis Agent** calls the metadata tools to learn the schema. It then parses the document, identifying a rich set of potential entities:
-* **Assets**: `LogStash`, `Zendesk CRM`
-* **Vendors**: `PaySecure`, `AnalyticsCorp`, `Zendesk`
-* **Processing Activities**: `Billing`, `Customer Support`
+* **Assets**: `Production AWS RDS`
+* **Vendors**: `AnalyticsCorp`
+* **Processing Activities**: `SaaS Platform`, `Marketing`, `Customer Support`, `User Authentication`
+* **Data Elements**: `user names`, `email addresses`
+* **Data Subject Types**: `Customers`, `EU Customers`, `US-based Employees`
 
 ### Step 3: Disambiguation with Tools
-The agent uses **`find_similar_entities()`** for each term, learning which are new and which may already exist in the graph.
+The agent uses **`find_similar_entities()`** for each term:
+* It finds no existing asset named `Production AWS RDS` and flags it as **new**.
+* It finds a strong match for `user names` with the pre-seeded **"Full Name"** Data Element.
+* It finds strong matches for both `Customers` and `EU Customers` with the pre-seeded **"Customer"** Data Subject Type.
+* It finds a strong match for `US-based Employees` with the pre-seeded **"Employee"** Data Subject Type.
 
 ### Step 4: Dynamic Data Collection and Confirmation
-The agent presents its comprehensive findings and uses the metadata to begin the dynamic conversation.
+The agent presents its comprehensive findings and uses metadata to begin the dynamic conversation.
 
 > **AGENT:** "I have analyzed the policy and have the following proposals:
 >
 > **New Entities Identified:**
-> * **Assets**: `LogStash`, `Zendesk CRM`
-> * **Vendors**: `PaySecure`, `AnalyticsCorp`, `Zendesk`
+> * **Asset**: `Production AWS RDS`
+> * **Vendor**: `AnalyticsCorp`
+> * **Processing Activities**: `SaaS Platform`, `Marketing`, `Customer Support`, `User Authentication`
 >
-> Let's process the new **Vendors** one by one. For **'PaySecure'**, the system requires a mandatory 'contact\_email'. What is the contact email?"
+> **System Matches:**
+> * The policy mentions `user names`, which I've matched to the system's **'Full Name'** Data Element.
+> * It mentions `Customers` and `EU Customers`, which I've matched to the **'Customer'** Data Subject Type.
+> * It mentions `US-based Employees`, which I've matched to the **'Employee'** Data Subject Type.
 >
-> **USER:** "billing-support@paysecure.com"
+> Now, before I create the new **Asset** `Production AWS RDS`, the system requires a mandatory 'hosting\_location'. Could you please provide that?"
 >
-> **AGENT:** "Thank you. Now for **'Zendesk'**. What is their contact email?"
+> **USER:** "us-west-2"
 >
-> *(...the conversation continues until all mandatory data is collected...)*
->
-> **AGENT:** "Based on the policy and the system's rules, I've also inferred these relationships:
-> * `ProcessingActivity('Billing')` is `ASSISTED_BY` `Vendor('PaySecure')`
-> * `ProcessingActivity('Customer Support')` `USES` `Asset('Zendesk CRM')`
+> **AGENT:** "Thank you. Based on the policy and the system's rules, I've also inferred this web of relationships:
+> * `ProcessingActivity('User Authentication')` **USES** `Asset('Production AWS RDS')`
+> * `Asset('Production AWS RDS')` **CONTAINS** `DataElement('Full Name')`
+> * `Asset('Production AWS RDS')` **CONTAINS** data about `DataSubjectType('Customer')`
+> * `ProcessingActivity('Marketing')` is **ASSISTED_BY** `Vendor('AnalyticsCorp')`
 >
 > Do you approve this full plan?"
 
 ### Step 5: Construction and Validation
-The user approves. The confirmed and enriched data is passed to the **Graph Construction Agent** for final, validated creation in the database.
+The user approves. The confirmed and enriched data is passed to the **Graph Construction Agent** for final, validated creation of all new entities and their complex relationships in the database.
 
 ---
 
