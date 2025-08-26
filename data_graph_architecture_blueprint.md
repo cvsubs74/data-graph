@@ -45,32 +45,43 @@ Imagine a scenario where a user is interacting with an agent to add a new vendor
 
 ## The MCP Toolbox: The System's External Brain 🧠
 
-The foundation of this architecture is the **MCP (Master Control Program) Server Toolbox**. It acts as the system's external brain, providing the LLM with all the context, rules, and intelligent functions it needs.
+The foundation of this architecture is the **MCP (Master Control Program) Server Toolbox**. It acts as the system's external brain, providing the LLM with all the context, rules, and intelligent functions it needs. This knowledge is seeded directly into the database, creating a single source of truth that the agent accesses through tools.
 
+### The Anatomy of the System's Knowledge
 
+The agent's understanding of the privacy domain is built from four key pillars of metadata, all defined in the system:
 
-### Anatomy of Metadata: Markdown Examples
-
-To understand how the agent learns, consider the output from its initial tool calls, presented in a clear Markdown format:
-
-**1. Call: `get_entity_types()`**
-This tool tells the agent what kinds of things it should be looking for in the document. The output is a list of available entity types:
+**1. The Core Concepts (Entity Types)**
+Before parsing a document, the agent calls **`get_entity_types()`** to learn what it should be looking for. The system defines five core concepts:
 * **Asset**: A system, application, or database.
-* **Vendor**: A third-party company or service.
 * **ProcessingActivity**: A business process that uses data.
 * **DataElement**: A specific category of personal data.
+* **DataSubjectType**: A category of individual.
+* **Vendor**: A third-party company or service.
 
-**2. Call: `get_entity_parameters(entity_type='Vendor')`**
-This tool tells the agent what specific information it needs to collect for a Vendor.
-* For the **Vendor** entity type:
+**2. The Required Information (Entity Properties)**
+The agent calls **`get_entity_parameters()`** to learn what specific attributes are needed for each entity type, including whether they are mandatory. This is what drives the dynamic conversation.
+* For an **Asset**:
+    * `hosting_location` (String, **Required**): The physical or cloud region where the asset is hosted.
+    * `data_retention_days` (Integer, *Optional*): Number of days data is retained in this asset.
+* For a **Vendor**:
     * `contact_email` (String, **Required**): The primary contact email for the vendor.
     * `dpa_signed` (Boolean, *Optional*): Indicates if a Data Processing Agreement is signed.
+* For a **DataElement**:
+    * `sensitivity_level` (String, **Required**): The sensitivity level of the data (e.g., Public, Confidential, Secret).
 
-**3. Call: `get_relationship_ontology()`**
-This provides the ironclad rules for how entities can connect.
+**3. The Pre-Seeded Vocabulary (System Data)**
+To ensure consistency, the system is pre-loaded with a standardized list of common Data Elements and Data Subject Types. The agent uses **`find_similar_entities()`** to match terms from a policy to this official vocabulary.
+* **Pre-seeded Data Elements include**: 'Email Address', 'Full Name', 'IP Address', 'Payment Information', 'Device ID', etc.
+* **Pre-seeded Data Subject Types include**: 'Customer', 'Employee', 'Vendor Contact', 'Job Applicant'.
+
+**4. The Rules of Engagement (Relationship Ontology)**
+This is the most critical metadata, defining the valid ways entities can be connected. The agent calls **`get_relationship_ontology()`** and learns the following set of ironclad rules:
 * `ProcessingActivity` **USES** `Asset`
-* `Asset` **TRANSFERS_DATA_TO** `Vendor`
 * `Asset` **CONTAINS** `DataElement`
+* `Asset` **CONTAINS** `DataSubjectType`
+* `Asset` **TRANSFERS_DATA_TO** `Vendor`
+* `ProcessingActivity` **ASSISTED_BY** `Vendor`
 
 ---
 
