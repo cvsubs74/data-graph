@@ -18,7 +18,7 @@ import logging
 import warnings
 from google.adk.agents import LlmAgent, SequentialAgent
 from .config import Config
-from .tools.tools import scrape_and_extract_policy_data, build_data_graph, mcp_toolset, metadata_mcp_toolset
+from .tools.tools import scrape_and_extract_policy_data, build_data_graph, mcp_toolset, metadata_mcp_toolset, visualization_mcp_toolset
 from .shared_libraries.callbacks import (
     before_model_callback,
     before_agent_callback,
@@ -56,7 +56,7 @@ graph_construction_agent = LlmAgent(
     name="GraphConstructionAgent",
     model=configs.agent_settings.model,
     instruction=GRAPH_CONSTRUCTION_INSTRUCTION,
-    tools=[build_data_graph, mcp_toolset],
+    tools=[visualization_mcp_toolset],  # Use visualization-focused toolset without entity creation tools
     # Add callbacks directly as parameters
     before_tool_callback=before_tool_callback,
     after_tool_callback=after_tool_callback,

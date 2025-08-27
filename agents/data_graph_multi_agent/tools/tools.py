@@ -47,6 +47,43 @@ metadata_mcp_toolset = MCPToolset(
     ]
 )
 
+# Create a visualization-focused MCP toolset that excludes entity creation tools
+visualization_mcp_toolset = MCPToolset(
+    connection_params=StreamableHTTPConnectionParams(
+        url=configs.MCP_SERVER_URL,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream"
+        },
+        timeout=30
+    ),
+    # Only include tools needed for visualization and similarity checking
+    # Exclude all entity creation, update, and deletion tools
+    tool_filter=[
+        # Metadata tools
+        "get_entity_types",
+        "get_entity_parameters",
+        "get_relationship_ontology",
+        
+        # Retrieval tools
+        "find_similar_entities",
+        "get_asset",
+        "get_processing_activity",
+        "get_data_element",
+        "get_data_subject_type",
+        "get_vendor",
+        "get_relationships",
+        
+        # List tools
+        "list_assets",
+        "list_processing_activities",
+        "list_data_elements",
+        "list_data_subject_types",
+        "list_vendors",
+        "list_all_relationships"
+    ]
+)
+
 
 def scrape_and_extract_policy_data(url: str) -> Dict[str, Any]:
     """Scrapes a privacy policy from a URL and returns the raw content for LLM analysis.
