@@ -18,7 +18,7 @@ import logging
 import warnings
 from google.adk.agents import LlmAgent, SequentialAgent
 from .config import Config
-from .tools.tools import scrape_and_extract_policy_data, build_data_graph, mcp_toolset
+from .tools.tools import scrape_and_extract_policy_data, build_data_graph, mcp_toolset, metadata_mcp_toolset
 from .shared_libraries.callbacks import (
     before_model_callback,
     before_agent_callback,
@@ -40,7 +40,7 @@ document_analysis_agent = LlmAgent(
     name="DocumentAnalysisAgent",
     model=configs.agent_settings.model,
     instruction=DOCUMENT_ANALYSIS_INSTRUCTION,
-    tools=[scrape_and_extract_policy_data, mcp_toolset],
+    tools=[scrape_and_extract_policy_data, metadata_mcp_toolset],
     # This key saves the agent's final output to the session state,
     # making it available for the next agent in the sequence.
     output_key="policy_analysis_result",

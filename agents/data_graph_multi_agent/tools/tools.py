@@ -27,6 +27,26 @@ mcp_toolset = MCPToolset(
     )
 )
 
+# Create a filtered MCP toolset with only metadata-related tools for Document Analysis agent
+metadata_mcp_toolset = MCPToolset(
+    connection_params=StreamableHTTPConnectionParams(
+        url=configs.MCP_SERVER_URL,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream"
+        },
+        timeout=30
+    ),
+    # Only include metadata-related tools
+    tool_filter=[
+        "get_entity_types",
+        "get_entity_parameters",
+        "get_relationship_ontology",
+        "list_data_elements",
+        "list_data_subject_types"
+    ]
+)
+
 
 def scrape_and_extract_policy_data(url: str) -> Dict[str, Any]:
     """Scrapes a privacy policy from a URL and returns the raw content for LLM analysis.
