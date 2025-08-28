@@ -2,38 +2,41 @@
 
 ## Introduction: Architecture as a Consequence, Not a Goal
 
-This document outlines a blueprint for a multi-agent system designed specifically for the complex domain of **privacy policy analysis and data graph construction**. It's crucial to understand that the agentic architecture presented here is not an abstract framework; it is a direct consequence of the problem's unique challenges. The primary goal is not simply to "build agents," but to create a transparent, verifiable, and user-centric system for navigating the nuanced and high-stakes world of data privacy.
+This document outlines a blueprint for an agentic system designed specifically for the complex domain of **privacy policy analysis and data graph construction**. It's crucial to understand that the agentic architecture presented here is not an abstract framework; it is a direct consequence of the problem's unique challenges. The primary goal is not simply to "build agents," but to create a transparent, verifiable, and user-centric system for navigating the nuanced and high-stakes world of data privacy.
 
-The core principle is **domain-first design**. The architecture serves the task, not the other way around. To illustrate why this specific multi-agent approach was chosen, we will contrast it with a simpler, monolithic agent approach, demonstrating how the separation of concerns is essential for achieving trustworthiness and accuracy in this domain.
+The core principle is **domain-first design**. The architecture serves the task, not the other way around. To illustrate why a single, context-rich agent approach was chosen, we will contrast it with a multi-agent framework, demonstrating how a continuous, stateful session is essential for achieving trustworthiness and accuracy in this domain.
 
 ---
 
-## Architectural Philosophy: The Case for Specialization
+## Architectural Philosophy: The Case for a Unified Dialogue
 
-In a domain as sensitive as privacy compliance, creating an accurate and comprehensive data map is paramount. Today OneTrust tackles this with **static assessment templates**. This approach provides structure by defining a fixed set of questions upfront to capture information about entities and their attributes. However, this rigidity means the process cannot dynamically adapt to the specific language of a legal document or to evolving business needs. A template is a fixed script, not an intelligent conversation.
+In a domain as sensitive as privacy compliance, creating an accurate and comprehensive data map is paramount. Today, OneTrust tackles this with **static assessment templates**. This approach provides structure by defining a fixed set of questions upfront to capture information about entities and their attributes. However, this rigidity means the process cannot dynamically adapt to the specific language of a legal document or to evolving business needs. A template is a fixed script, not an intelligent conversation.
 
-Therefore, our philosophy is rooted in creating a system of **specialized, collaborating agents** that transforms this process from a static checklist into a dynamic dialogue. Each agent has a single, well-defined responsibility, empowering the user in a transparent, step-by-step workflow.
+Therefore, our philosophy is rooted in creating a **single, intelligent agent** that transforms this process from a static checklist into a dynamic, context-aware dialogue. This unified agent empowers the user in a seamless, stateful workflow, ensuring that no information is lost and that the user can interject with questions at any point.
 
 The difference is best explained with an analogy:
 * The **static template approach** is like giving a builder a generic, one-size-fits-all blueprint and a rigid checklist. They can only build what's on the plan and ask the questions on the list, regardless of the unique conditions of the construction site.
-* The **agentic approach** is like hiring a specialized team. An "architect" agent first reads the terrain (the privacy policy) to create an initial plan. Then, a "construction crew" agent dynamically asks for the necessary materials (the mandatory attributes) based on that specific plan. Finally, an "inspector" agent validates the structure against the master rules (the system's ontology).
+* The **multi-agent approach** is like hiring a disconnected team. The architect agent draws a plan, leaves it on the desk, and goes home. The construction agent picks it up, but if they have a question about the architect's intent, they can't ask—the architect is gone. This handoff is where context is lost.
+* The **single-agent approach** is like working directly with a master builder. This expert reads the terrain (the privacy policy), creates a plan, and then works with you to execute it. If you ask a question about the initial plan while they're laying the foundation, they have the full context to answer you and then seamlessly resume their work. The conversation is continuous and context-rich.
 
-This specialized, agent-driven method makes the entire process dynamic and intelligent, adapting itself to the document at hand rather than forcing the document's complexities into a predefined, static form.
+This single-agent method makes the entire process dynamic and intelligent, adapting itself to the document and the user's needs rather than forcing the complexities into a fragmented, unreliable workflow.
 
 ---
 
-## Architectural Choice: Single-Agent Generalist vs. Multi-Agent Pipeline
+## Architectural Choice: Multi-Agent Relay vs. Single-Agent Session
 
-The most critical design decision is how to structure the agentic workflow. While both single-agent and multi-agent systems are viable, the pipeline approach offers significantly more reliability and clarity for complex, multi-step tasks.
+The most critical design decision is how to structure the agentic workflow. While a multi-agent system might seem appealing for separating concerns, it introduces significant reliability issues. For complex, multi-step tasks that require user interaction, the single-agent approach offers a vastly superior, context-rich session.
+
+The multi-agent framework is **unreliable because it acts as a relay**. Once the first agent is done, it generates a response and passes it to the next one, often losing the nuance and history of the user interaction. With a single LLM Agent, the session is context-rich, and the user can ask any question at any point without losing context on the data graph construction process.
 
 ### Key Differences at a Glance
 
-| Aspect                | Single-Agent Approach                                                                                     | Multi-Agent Approach                                                                                             |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| **Architecture** | A single `LlmAgent` responsible for the entire end-to-end process.                                        | A `SequentialAgent` that orchestrates two or more specialized `LlmAgent`s.                                       |
-| **Prompting Strategy** | One massive, monolithic prompt detailing every step, from metadata collection to relationship creation.      | Multiple, shorter, focused prompts. One for document analysis and another for graph construction.                |
-| **Cognitive Load** | High. The LLM must track its position in a long, multi-stage workflow, increasing the risk of errors or forgotten instructions ("context drift"). | Low per agent. Each agent has a clear, narrowly defined goal, improving reliability.                              |
-| **Maintainability** | Difficult to debug. A failure could be due to a misinterpretation of any of the numerous steps in the single prompt. | Easier to debug. If web scraping fails, the issue is clearly within the `DocumentAnalysisAgent`.               
+| Aspect | Multi-Agent Approach (Unreliable Relay) | Single-Agent Approach (Context-Rich Session) |
+| :--- | :--- | :--- |
+| **Architecture** | A `SequentialAgent` orchestrating multiple `LlmAgent`s. Context is passed between them. | A single `LlmAgent` responsible for the entire end-to-end process. |
+| **User Experience** | Fragmented and brittle. The user is in a session with one agent, which then ends and passes a summary to the next. The user cannot easily refer back to earlier parts of the conversation. | Seamless and robust. The user maintains a continuous dialogue with one agent that has access to the full conversational history. |
+| **Context Handling** | **High risk of context loss.** Each agent handoff is a potential point of failure where information is dropped or misinterpreted. The system acts as a "relay," quickly losing context. | **Context is preserved.** The LLM tracks the entire workflow, allowing the user to ask clarifying questions about previous steps without derailing the process. |
+| **Maintainability** | Difficult to debug. A failure could be due to a misinterpretation in the handoff *between* agents, not just within a single prompt. | Easier to debug. The entire interaction exists in a single, continuous log, making it simple to trace the source of an error. |
 
 ### Demos
 Single Agent: https://data-graph-agent-79797180773.us-central1.run.app
@@ -42,9 +45,10 @@ Multi Agent: https://data-graph-multi-agent-79797180773.us-central1.run.app
 
 ### Deeper Dive: A Tale of Two Workflows
 
-Imagine a scenario where a user is interacting with an agent to add a new vendor.
-* With the **single agent**, the conversation is deep into step 6 of its 8-step prompt. If the user asks a clarifying question about an asset from step 5, this context switch can cause the LLM to "lose its place" in the long prompt, potentially skipping the remaining steps or hallucinating its next action. This is a classic example of **context drift**.
-* With the **multi-agent pipeline**, this confusion is impossible. The conversation with the `DocumentAnalysisAgent` is a completed transaction. The `GraphConstructionAgent` begins its work with a clean slate and a focused task—building the graph—making it immune to conversational detours from the previous stage.
+Imagine a scenario where a user is interacting with an agent to add a new vendor based on a document analysis.
+
+* With the **multi-agent pipeline**, the `DocumentAnalysisAgent` first talks to the user, identifies the vendor, and asks some initial questions. It then finishes its job and passes a summary (e.g., "Create vendor: PaySecure, contact: none") to the `GraphConstructionAgent`. If the user then asks, "Wait, what did the document say about their security practices again?", the `GraphConstructionAgent` is helpless. It has no access to the previous conversation or the initial analysis. It only received a simple instruction. This is the core failure of the relay model.
+* With the **single agent**, the entire interaction is one continuous session. When the agent is ready to create the vendor, it might say, "I need a contact email for PaySecure." The user can then ask, "What did the document say about their security practices again?" The agent, having the full context, can answer that question and then seamlessly return to its previous state: "Good question. The document did not mention their security practices. Now, about that contact email for PaySecure?" The session remains rich and the workflow is uninterrupted.
 
 ---
 
@@ -102,6 +106,71 @@ A core principle of the database design is the inclusion of a vector embedding i
 
 This is the difference between searching a library for a book by its exact title versus asking a librarian for "books *about* artificial intelligence," who can then find relevant books with many different titles.
 
+## Vector Representations: Tool-Driven Similarity Detection
+
+### The Challenge of Entity Resolution
+
+One of the most critical challenges in data graph construction is **entity resolution** - determining whether an entity mentioned in a document corresponds to one already in the system. Traditional approaches rely on exact string matching or basic fuzzy matching, which often fail to capture semantic similarities or handle variations in terminology.
+
+For example, a document might mention "customer contact details" while the system has a data element called "customer personal information." These refer to the same concept but use different language.
+
+### Vector Embeddings as the Solution
+
+Our architecture addresses this challenge by maintaining **vector representations** (embeddings) of all entities in the system. These dense numerical representations capture the semantic meaning of entities, enabling similarity detection that goes beyond simple string matching.
+
+| Entity Type | Vector Representation Benefits |
+| :--- | :--- |
+| **Data Elements** | Captures semantic similarities between different terms for the same type of data |
+| **Data Subject Types** | Recognizes variations in how people categories are described |
+| **Assets** | Identifies systems with similar functions despite naming differences |
+| **Processing Activities** | Connects related business processes across different terminology |
+| **Vendors** | Matches vendor mentions with existing records despite variations |
+
+### Implementation Strategy
+
+1. **Embedding Generation**: When entities are created or updated in the system, their descriptions and metadata are processed through an embedding model to generate vector representations.
+
+2. **Storage in Database**: These vectors are stored alongside the entities in the database schema, as seen in the `embedding ARRAY<FLOAT64>` fields in our DDL.
+
+3. **Tool-Driven Similarity Search**: The agent delegates all similarity detection to specialized tools rather than attempting to perform matching itself:
+
+```python
+def find_similar_entities(entity_type, query_text):
+    # Generate embedding for the query text
+    query_embedding = embedding_model.encode(query_text)
+    
+    # Search the database for similar entities using vector similarity
+    results = database.search_similar(
+        entity_type=entity_type,
+        embedding=query_embedding,
+        threshold=0.75  # Configurable similarity threshold
+    )
+    
+    return results
+```
+
+### Key Benefits of Tool-Driven Similarity
+
+1. **Separation of Concerns**: The LLM focuses on understanding the document and extracting potential entities, while specialized tools handle the complex task of entity resolution.
+
+2. **Consistency and Reliability**: By externalizing similarity detection to tools, we ensure consistent results that aren't subject to LLM variability or hallucination.
+
+3. **Scalability**: Vector search can efficiently handle large databases of entities, allowing the system to scale as the organization's data graph grows.
+
+4. **Auditability**: All similarity decisions are made by deterministic tools with configurable thresholds, creating a clear audit trail for entity resolution decisions.
+
+5. **Continuous Improvement**: The embedding models and similarity thresholds can be tuned over time based on user feedback without requiring changes to the agent's prompts.
+
+### Example Workflow
+
+1. The agent identifies "customer email addresses" in a document.
+2. Instead of guessing whether this matches existing data elements, it calls `find_similar_entities('DataElement', 'customer email addresses')`.
+3. The tool returns that "Email Address" is a 92% match.
+4. The agent presents this match to the user: "I found that 'customer email addresses' likely refers to the existing data element 'Email Address' in our system."
+5. The user confirms or corrects this match, ensuring accuracy.
+
+By leveraging vector representations and tool-driven similarity detection, our architecture ensures that entity resolution is accurate, consistent, and transparent, further enhancing the reliability of the data graph construction process.
+
 ## Metadata-Driven Conversations: A Dynamic Workflow
 
 The agent's ability to hold a dynamic, intelligent conversation is a core pattern of this architecture, moving beyond the rigidity of traditional systems. This workflow is driven entirely by metadata, not by a hardcoded script.
@@ -128,7 +197,7 @@ This is the difference between a call center agent who can only read from a fixe
 
 ## A Practical Example: Processing a Privacy Policy (Expanded)
 
-Here is a more detailed walkthrough of the multi-agent pipeline processing the sample policy, now covering a wider range of entities and their relationships.
+Here is a more detailed walkthrough of the single-agent workflow processing the sample policy, now covering a wider range of entities and their relationships.
 
 ### The Source Document: Comprehensive Privacy Policy
 > **...**
@@ -142,7 +211,7 @@ Here is a more detailed walkthrough of the multi-agent pipeline processing the s
 > **...**
 
 ### Step 1 & 2: Gaining Context and Parsing
-The **Web Analysis Agent** calls the metadata tools to learn the schema. It then parses the document, identifying a rich set of potential entities:
+The **Agent** begins its process. It first calls the metadata tools (`get_entity_types`, `get_relationship_ontology`) to learn the schema. It then parses the document, identifying a rich set of potential entities:
 * **Assets**: `Production AWS RDS`
 * **Vendors**: `AnalyticsCorp`
 * **Processing Activities**: `SaaS Platform`, `Marketing`, `Customer Support`, `User Authentication`
@@ -150,14 +219,14 @@ The **Web Analysis Agent** calls the metadata tools to learn the schema. It then
 * **Data Subject Types**: `Customers`, `EU Customers`, `US-based Employees`
 
 ### Step 3: Disambiguation with Tools
-The agent uses **`find_similar_entities()`** for each term:
+The agent uses **`find_similar_entities()`** for each term to reconcile them against the system's knowledge:
 * It finds no existing asset named `Production AWS RDS` and flags it as **new**.
 * It finds a strong match for `user names` with the pre-seeded **"Full Name"** Data Element.
 * It finds strong matches for both `Customers` and `EU Customers` with the pre-seeded **"Customer"** Data Subject Type.
 * It finds a strong match for `US-based Employees` with the pre-seeded **"Employee"** Data Subject Type.
 
-### Step 4: Dynamic Data Collection and Confirmation
-The agent presents its comprehensive findings and uses metadata to begin the dynamic conversation.
+### Step 4: Dynamic Data Collection, Confirmation, and Construction
+The agent presents its comprehensive findings and uses metadata to begin the dynamic conversation, moving seamlessly from analysis to construction within the same session.
 
 > **AGENT:** "I have analyzed the policy and have the following proposals:
 >
@@ -181,18 +250,18 @@ The agent presents its comprehensive findings and uses metadata to begin the dyn
 > * `Asset('Production AWS RDS')` **CONTAINS** data about `DataSubjectType('Customer')`
 > * `ProcessingActivity('Marketing')` is **ASSISTED_BY** `Vendor('AnalyticsCorp')`
 >
-> Do you approve this full plan?"
+> Do you approve this full plan? Once approved, I will commit these changes to the data graph."
 
-### Step 5: Construction and Validation
-The user approves. The confirmed and enriched data is passed to the **Graph Construction Agent** for final, validated creation of all new entities and their complex relationships in the database.
+### Step 5: Final Validation and Creation
+The user approves. The agent, having all the confirmed and enriched data within its active context, proceeds with the final, validated creation of all new entities and their complex relationships in the database. The entire process is a single, auditable transaction.
 
 ---
 
-## Conclusion: Reliability Through Specialization
+## Conclusion: Reliability Through a Unified Session
 
 This detailed example demonstrates the power of the blueprint. The system successfully navigated a real-world policy by:
-1.  **Using a Multi-Agent Pipeline** to separate the complex task of analysis from the simpler task of construction.
+1.  **Using a Single-Agent Architecture** to maintain a context-rich session, preventing the information loss common in unreliable multi-agent relay systems.
 2.  **Externalizing its "Brain"** into the MCP toolbox, which relies on the company's own seeded data and rules as the ultimate source of truth.
-3.  **Driving Conversations Dynamically** with metadata, ensuring all required information is captured in a flexible and future-proof way.
+3.  **Driving Conversations Dynamically** with metadata, ensuring all required information is captured in a flexible and future-proof way within a continuous dialogue.
 
-This architecture creates a reliable, transparent, and auditable system that keeps the human expert in control, setting the standard for building enterprise-grade AI applications for complex domains.
+This architecture creates a reliable, transparent, and auditable system that keeps the human expert in control. By prioritizing a seamless, stateful user session, it sets the standard for building enterprise-grade AI applications for complex domains.
