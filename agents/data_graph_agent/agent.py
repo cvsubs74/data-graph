@@ -19,7 +19,7 @@ import warnings
 from google.adk.agents import LlmAgent
 from .config import Config
 from .prompts import GLOBAL_INSTRUCTION, INSTRUCTION
-from .tools.tools import mcp_toolset
+from .tools.tools import mcp_toolset, scrape_and_extract_policy_data
 from .shared_libraries.callbacks import (
     before_model_callback,
     before_agent_callback,
@@ -45,7 +45,7 @@ def create_agent() -> LlmAgent:
         description=GLOBAL_INSTRUCTION,
         instruction=INSTRUCTION,
         tools=[
-            mcp_toolset
+            mcp_toolset, scrape_and_extract_policy_data
         ],
         before_tool_callback=before_tool_callback,
         after_tool_callback=after_tool_callback,
