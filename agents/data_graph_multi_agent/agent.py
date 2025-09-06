@@ -57,7 +57,7 @@ graph_construction_agent = LlmAgent(
     model=configs.agent_settings.model,
     instruction=GRAPH_CONSTRUCTION_INSTRUCTION,
     tools=[visualization_mcp_toolset, visualize_graph_data],  # Include visualization tool
-    output_key="graph",
+    output_key="graph_construction_result",
     # Add callbacks directly as parameters
     before_tool_callback=before_tool_callback,
     after_tool_callback=after_tool_callback,

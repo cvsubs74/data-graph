@@ -1,0 +1,8 @@
+google-adk
+pydantic
+vertexai
+requests
+uvicorn
+fastapi
+python-dotenv
+beautifulsoup4

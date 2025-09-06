@@ -33,6 +33,8 @@ DROP TABLE IF EXISTS DataSubjectTypeElements;
 DROP TABLE IF EXISTS DataElements;
 DROP TABLE IF EXISTS DataSubjectTypes;
 DROP TABLE IF EXISTS Vendors;
+DROP TABLE IF EXISTS QuestionOptions;
+DROP TABLE IF EXISTS RiskQuestions;
 
 
 -- =================================================================
@@ -172,4 +174,27 @@ CREATE INDEX OntologyBySourceType ON RelationshipOntology(source_type_id);
 CREATE INDEX OntologyByTargetType ON RelationshipOntology(target_type_id);
 CREATE INDEX OntologyByRelationshipType ON RelationshipOntology(relationship_type);
 
+-- Risk Assessment Tables
+CREATE TABLE RiskQuestions (
+    question_id STRING(36) NOT NULL,
+    question_text STRING(MAX) NOT NULL,
+    question_type STRING(32) NOT NULL,  -- yes_no, free_text, single_select
+    category STRING(64) NOT NULL,
+    is_required BOOL NOT NULL,
+    created_at TIMESTAMP NOT NULL OPTIONS(allow_commit_timestamp=true),
+    updated_at TIMESTAMP NOT NULL OPTIONS(allow_commit_timestamp=true)
+) PRIMARY KEY (question_id);
+
+CREATE INDEX RiskQuestionsByCategory ON RiskQuestions(category);
+
+CREATE TABLE QuestionOptions (
+    option_id STRING(36) NOT NULL,
+    question_id STRING(36) NOT NULL,
+    option_text STRING(MAX) NOT NULL,
+    created_at TIMESTAMP NOT NULL OPTIONS(allow_commit_timestamp=true),
+    updated_at TIMESTAMP NOT NULL OPTIONS(allow_commit_timestamp=true),
+    CONSTRAINT FK_RiskQuestion FOREIGN KEY (question_id) REFERENCES RiskQuestions (question_id)
+) PRIMARY KEY (option_id);
+
+CREATE INDEX QuestionOptionsByQuestion ON QuestionOptions(question_id);
 

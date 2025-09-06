@@ -176,3 +176,39 @@ INSERT INTO EntityTypes (type_id, name, description, table_name, id_column, crea
 -- 3.8. Add Asset to DataSubjectTypeElement relationship
 INSERT INTO RelationshipOntology (source_type_id, target_type_id, relationship_type, description, created_at, updated_at) VALUES
   ('2b6291d5-f623-4a12-8b3a-59d04f145459', 'd7e8f9g0-h1i2-3j4k-5l6m-7n8o9p0q1r2', 'CONTAINS', 'A system contains data about specific types of people.', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP());
+
+-- 3.9. Seed the RiskQuestions table
+INSERT INTO RiskQuestions (question_id, question_text, question_type, category, is_required, created_at, updated_at) VALUES
+  -- Security Questions
+  ('q1a2b3c4-d5e6-4f7g-8h9i-0j1k2l3m4n5o', 'Does the vendor have a documented information security policy?', 'yes_no', 'security', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q2b3c4d5-e6f7-5g8h-9i0j-1k2l3m4n5o6p', 'Does the vendor have SOC 2 certification?', 'yes_no', 'security', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q3c4d5e6-f7g8-6h9i-0j1k-2l3m4n5o6p7q', 'Does the vendor have ISO 27001 certification?', 'yes_no', 'security', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q4d5e6f7-g8h9-7i0j-1k2l-3m4n5o6p7q8r', 'Has the vendor experienced any security breaches in the last 3 years?', 'yes_no', 'security', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q5e6f7g8-h9i0-8j1k-2l3m-4n5o6p7q8r9s', 'How does the vendor handle security incident response?', 'free_text', 'security', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  
+  -- Compliance Questions
+  ('q6f7g8h9-i0j1-9k2l-3m4n-5o6p7q8r9s0t', 'Is the vendor GDPR compliant?', 'yes_no', 'compliance', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q7g8h9i0-j1k2-0l3m-4n5o-6p7q8r9s0t1u', 'Is the vendor CCPA compliant?', 'yes_no', 'compliance', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q8h9i0j1-k2l3-1m4n-5o6p-7q8r9s0t1u2v', 'Does the vendor have a documented privacy policy?', 'yes_no', 'compliance', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q9i0j1k2-l3m4-2n5o-6p7q-8r9s0t1u2v3w', 'How does the vendor handle data subject requests?', 'free_text', 'compliance', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  
+  -- Financial Questions
+  ('q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'What is the vendor\'s financial stability rating?', 'single_select', 'financial', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q1k2l3m4-n5o6-4p7q-8r9s-0t1u2v3w4x5y', 'Has the vendor been profitable for the last 3 years?', 'yes_no', 'financial', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q2l3m4n5-o6p7-5q8r-9s0t-1u2v3w4x5y6z', 'What is the vendor\'s annual revenue?', 'free_text', 'financial', FALSE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  
+  -- Operational Questions
+  ('q3m4n5o6-p7q8-6r9s-0t1u-2v3w4x5y6z7a', 'What is the vendor\'s disaster recovery plan?', 'free_text', 'operational', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q4n5o6p7-q8r9-7s0t-1u2v-3w4x5y6z7a8b', 'What is the vendor\'s uptime guarantee?', 'free_text', 'operational', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('q5o6p7q8-r9s0-8t1u-2v3w-4x5y6z7a8b9c', 'Does the vendor have a business continuity plan?', 'yes_no', 'operational', TRUE, PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP());
+
+-- 3.10. Seed the QuestionOptions table
+INSERT INTO QuestionOptions (option_id, question_id, option_text, created_at, updated_at) VALUES
+  -- Options for financial stability rating
+  ('o1a2b3c4-d5e6-4f7g-8h9i-0j1k2l3m4n5o', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'AAA - Excellent', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('o2b3c4d5-e6f7-5g8h-9i0j-1k2l3m4n5o6p', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'AA - Very Good', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('o3c4d5e6-f7g8-6h9i-0j1k-2l3m4n5o6p7q', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'A - Good', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('o4d5e6f7-g8h9-7i0j-1k2l-3m4n5o6p7q8r', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'BBB - Satisfactory', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('o5e6f7g8-h9i0-8j1k-2l3m-4n5o6p7q8r9s', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'BB - Moderate', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('o6f7g8h9-i0j1-9k2l-3m4n-5o6p7q8r9s0t', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'B - Weak', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP()),
+  ('o7g8h9i0-j1k2-0l3m-4n5o-6p7q8r9s0t1u', 'q0j1k2l3-m4n5-3o6p-7q8r-9s0t1u2v3w4x', 'CCC or below - Poor', PENDING_COMMIT_TIMESTAMP(), PENDING_COMMIT_TIMESTAMP());
