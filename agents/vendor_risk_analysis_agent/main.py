@@ -1,40 +1,44 @@
-"""Entry point for Cloud Run deployment of the Vendor Risk Analysis Agent."""
+"""Main module for the custom interactive vendor risk analysis agent."""
 
 import os
 import logging
-import uvicorn
-from google.adk.cli.fast_api import get_fast_api_app
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from google.adk.rest import create_app
+from google.adk.run import Runner
+
+# Import the simplified agent instead of the original agent
+from .simplified_agent import root_agent
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# Get the directory where main.py is located
-AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
-# Session service URI (SQLite database for sessions)
-SESSION_SERVICE_URI = "sqlite:///./sessions.db"
-# Allowed origins for CORS
-ALLOWED_ORIGINS = ["http://localhost", "http://localhost:8080", "*"]
-# Set web=True to serve the ADK web interface
-SERVE_WEB_INTERFACE = True
+# Create the FastAPI app with the custom agent
+app = create_app(root_agent)
 
-# Get the FastAPI app instance
-app = get_fast_api_app(
-    agent_dir=AGENT_DIR,
-    session_db_url=SESSION_SERVICE_URI,
-    allow_origins=ALLOWED_ORIGINS,
-    web=SERVE_WEB_INTERFACE,
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Add health check endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "agent": "vendor_risk_analysis_agent"}
+    """Health check endpoint."""
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
-    # Use the PORT environment variable provided by Cloud Run, defaulting to 8080
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    import uvicorn
+    
+    # Get port from environment variable or use default
+    port = int(os.environ.get("PORT", 8080))
+    
+    # Run the server
+    uvicorn.run(app, host="0.0.0.0", port=port)

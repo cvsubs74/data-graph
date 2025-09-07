@@ -1,158 +1,154 @@
-"""Agent module for the vendor risk analysis agent."""
+"""Simplified vendor risk analysis agent using agent-as-tool pattern."""
 
 import logging
-import warnings
-from google.adk.agents import LlmAgent, SequentialAgent
+import re
+from typing import Dict, List, Any, Optional, AsyncGenerator
+
+from google.adk.agents import LlmAgent, BaseAgent
 from google.adk.tools import google_search
+from google.adk.tools.agent_tool import AgentTool
+from google.adk.tools import google_search
+from google.adk.events import Event
+from google.adk.agents import InvocationContext
+from google.genai import types
 
 from .config import Config
-from .prompts import GLOBAL_INSTRUCTION
-from .tools.tools import mcp_toolset, scrape_and_extract_vendor_data
-from .shared_libraries.callbacks import (
-    before_model_callback,
-    before_agent_callback,
-    before_tool_callback,
-    after_tool_callback
-)
-
-warnings.filterwarnings("ignore", category=UserWarning, module=".*pydantic.*")
-
-# Get configuration
-configs = Config()
+from .tools.tools import scrape_and_extract_vendor_data, mcp_toolset
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# 1. URL Validator Agent - Validates the vendor URL and ensures it contains the vendor name
-url_validator_agent = LlmAgent(
-    name="URLValidatorAgent",
-    model=configs.agent_settings.model,
-    instruction="""Validate the vendor URL and ensure it's legitimate.
-    
-    1. Scrape the website content using the scrape_and_extract_vendor_data tool
-    2. Verify that the website is valid and operational
-    3. Check if the vendor name appears in the URL or website content
-    4. Extract basic information about the vendor
-    5. Output a structured summary with:
-       - Vendor name
-       - Vendor URL
-       - URL validation status (valid/invalid)
-       - Brief description of vendor's business
-    """,
-    tools=[scrape_and_extract_vendor_data],
-    output_key="url_validation_result",
-    before_tool_callback=before_tool_callback,
-    after_tool_callback=after_tool_callback,
-    before_agent_callback=before_agent_callback,
-    before_model_callback=before_model_callback,
-)
+# Get configuration
+configs = Config()
 
-# 2. Risk Questions Identifier Agent - Uses MCP toolset to get risk questions
-risk_questions_agent = LlmAgent(
-    name="RiskQuestionsAgent",
-    model=configs.agent_settings.model,
-    instruction="""Retrieve all pre-defined risk assessment questions from the MCP server.
-    
-    1. Use the MCP toolset to retrieve ALL risk questions using the get_risk_questions tool
-       - Do NOT pass any category parameter - get all questions
-       - Do NOT create any new risk questions - only use the pre-defined ones from the MCP server
-    2. Organize the retrieved questions in a clear, structured format
-    3. Output the complete list of risk questions that will be used by the researcher agent
-    
-    IMPORTANT: 
-    - Do NOT create or generate any new risk questions
-    - Only use the exact questions retrieved from the MCP server
-    - If no questions are returned, report this issue but do not create substitute questions
-    
-    Your output should include:
-    - The complete list of risk questions retrieved from the MCP server
-    - A note confirming that these are the exact questions from the MCP server
-    """,
-    tools=[mcp_toolset],
-    output_key="risk_questions",
-    before_tool_callback=before_tool_callback,
-    after_tool_callback=after_tool_callback,
-    before_agent_callback=before_agent_callback,
-    before_model_callback=before_model_callback,
-)
+# --- Using existing tools from tools.py ---
+# scrape_and_extract_vendor_data is imported from tools.py
+# mcp_toolset provides access to get_risk_questions() and other MCP tools
 
-# 3. Researcher Agent - Answers risk questions using Google search
+# --- Specialist Search Agent ---
+
+# Create a specialized researcher agent
 researcher_agent = LlmAgent(
-    name="ResearcherAgent",
+    name="VendorResearcherAgent",
     model=configs.agent_settings.model,
-    instruction="""Conduct comprehensive research on the vendor and answer ONLY the risk questions provided by the MCP server.
+    instruction="""You are a specialized vendor research agent. Your task is to gather detailed information 
+    about vendors and answer specific risk assessment questions.
     
-    1. Review the vendor information from the URL validator agent
-    2. Use the EXACT risk questions provided by the risk questions agent
-    3. Use Google search to gather detailed information about the vendor
-    4. Answer ONLY the risk questions provided by the MCP server
-    5. For each question, provide:
-       - The original question exactly as provided by the MCP server
-       - A detailed answer based on research
-       - Sources/references for the information
-    6. Include a comprehensive vendor profile with all relevant information
+    When given a vendor name and specific questions:
+    1. Use Google search to find relevant information about the vendor
+    2. Focus on finding information related to security, privacy, compliance, and reliability
+    3. Provide detailed, factual answers to the questions based on your research
+    4. ALWAYS INCLUDE SPECIFIC SOURCE CITATIONS FOR EVERY CLAIM AND ANSWER
+       - Include ONLY the exact, complete URLs that were returned by the Google search tool
+       - NEVER create, modify, or fabricate URLs - use only the exact URLs from search results
+       - Include the name of the source (company website, news article, etc.)
+       - Include the date of publication if available
+       - If you cannot find a reliable source for a claim, explicitly state this limitation
+    5. Format each answer with the following structure:
+       - Question: [Original question text]
+       - Answer: [Detailed answer]
+       - Sources: 
+         * Source Name: URL (without brackets or extra characters)
+         * Source Name: URL (without brackets or extra characters)
+    6. Present your findings in a clear, business-friendly format
+    7. VERIFICATION STEP: Before submitting your final response, verify that:
+       - All URLs are complete (starting with http:// or https://)
+       - All URLs come directly from search results (not fabricated or modified)
+       - NO URLs have additional characters like ']' at the end
+       - Each claim has at least one verifiable source
+       - All source citations use the format "Source Name: URL" without brackets
     
-    IMPORTANT:
-    - Do NOT create any new risk questions
-    - Only answer the exact questions provided by the MCP server
-    - If a question cannot be answered with available information, state this clearly
-    
-    Your output should contain:
-    - Complete vendor profile
-    - All MCP risk questions with detailed answers
-    - Sources for each piece of information
+    Be thorough in your research and provide the most accurate information available with proper citations.
     """,
-    tools=[google_search],
-    output_key="research_results",
-    before_tool_callback=before_tool_callback,
-    after_tool_callback=after_tool_callback,
-    before_agent_callback=before_agent_callback,
-    before_model_callback=before_model_callback,
+    tools=[google_search]
 )
 
-# 4. Verification Agent - Verifies all information using Google search
-verification_agent = LlmAgent(
-    name="VerificationAgent",
+# Wrap the researcher agent as a tool
+vendor_researcher_tool = AgentTool(
+    agent=researcher_agent,
+    skip_summarization=False  # Enable summarization to ensure the tool result is processed
+)
+
+# --- Main Orchestrator Agent ---
+
+# Create the simplified orchestrator agent
+autonomous_vendor_risk_agent = LlmAgent(
+    name="AutonomousVendorRiskAgent",
     model=configs.agent_settings.model,
-    instruction="""Verify the research results and create a final report with answers to the MCP risk questions.
+    instruction="""You are an expert vendor risk analyst. Your goal is to guide a user
+    through a complete vendor risk assessment.
     
-    1. Review the research results from the previous agent
-    2. Use Google search to verify key facts and claims about the vendor
-    3. Verify the answers to the MCP risk questions
-    4. Do NOT add any new risk questions that weren't in the original MCP list
-    5. Check for any inconsistencies or inaccuracies in the research
-    6. Generate a final comprehensive vendor risk assessment report with:
+    IMMEDIATELY UPON LAUNCH, introduce yourself with a detailed explanation of your capabilities:
+    
+    1. Begin with a professional greeting: "Welcome to the Vendor Risk Analysis System!"
+    
+    2. Explain your purpose: "I am your Vendor Risk Analysis Assistant, designed to help you conduct comprehensive risk assessments of potential or existing vendors."
+    
+    3. Provide a detailed overview of your capabilities:
+       - "I can analyze vendor websites to extract key information"
+       - "I can generate customized risk assessment questionnaires"
+       - "I can conduct in-depth research on vendors using multiple sources"
+       - "I can produce comprehensive risk assessment reports with recommendations"
+    
+    4. Explain the workflow in business-friendly terms:
+       - "First, I'll help you validate the vendor by analyzing their website"
+       - "Next, I'll generate appropriate risk assessment questions based on the vendor's industry and services"
+       - "Then, I'll conduct thorough research to answer these questions"
+       - "Finally, I'll compile everything into a professional risk assessment report"
+    
+    5. Provide clear instructions on how to begin: "To get started, please provide the URL of the vendor you'd like to assess."
+    
+    After this introduction, follow this sequence precisely:
+    1. **Validate URL:** When the user provides a URL, use the `scrape_and_extract_vendor_data` tool to analyze it. Present the validation results ONCE and ask for confirmation to proceed.
+    2. **Confirm & Fetch Questions:** After the user confirms, use the MCP toolset's `get_risk_questions` function. Present the questions ONCE and ask for confirmation.
+    3. **Confirm & Research:** After the user confirms the questions, use the vendor researcher tool to find answers. Present the research findings ONCE.
+    4. **AUTOMATICALLY Generate Report:** IMMEDIATELY after the vendor researcher tool returns its results, WITHOUT WAITING for any additional user input, synthesize all gathered information into a comprehensive final report. This step must happen automatically after the research tool completes. The report should include:
        - Executive Summary
        - Vendor Profile
        - Risk Assessment Methodology
        - Risk Assessment Results
-       - FAQ section with verified answers to ONLY the original MCP risk questions
-       - Recommendations
+       - FAQ section with verified answers to the risk questions (EACH ANSWER MUST INCLUDE SPECIFIC SOURCE CITATIONS)
+       - Recommendations (WITH SOURCE CITATIONS FOR EACH RECOMMENDATION)
        - Verification Statement
+       - References section listing all sources used
+    5. **Final Confirmation:** After presenting the complete report, ask the user if they would like any revisions using the phrase: "Would you like me to make any revisions to this report?"
+
+    IMPORTANT RULES TO PREVENT DUPLICATE RESPONSES:
+    - NEVER repeat your analysis or questions. Present each result EXACTLY ONCE.
+    - After using a tool (EXCEPT for the vendor researcher tool), wait for the user's response before proceeding.
+    - If you notice you're about to repeat information you've already shared, STOP and wait for user input instead.
+    - Always check if you've already presented information before presenting it again.
+    - Use the session state to track what you've already presented.
     
-    IMPORTANT:
-    - Only include the risk questions that came from the MCP server
-    - Do NOT create any new risk questions
-    - Maintain the exact wording of the original MCP questions
-    - If any answers are insufficient, improve them with additional research
+    CRITICAL INSTRUCTION FOR AUTOMATIC REPORT GENERATION:
+    - When the vendor researcher tool completes and returns results, you MUST IMMEDIATELY generate and present the final report.
+    - DO NOT wait for user input after the vendor researcher tool returns its results.
+    - DO NOT ask the user if they want to proceed with generating the report.
+    - AUTOMATICALLY transition from step 3 (Research) directly to step 4 (Report Generation).
+    - This is the ONLY step where you should proceed without explicit user confirmation.
+    
+    For all other steps (except research to report transition), do not proceed without explicit user confirmation.
+    Present all information in a business-friendly format, avoiding technical details.
+    
+    SOURCE CITATION REQUIREMENTS:
+    - EVERY claim, statement, or answer in the report MUST include a specific source citation
+    - Format citations as "Source Name: URL" (without brackets)
+    - When citing inline, use parentheses: (Source Name, YYYY)
+    - ONLY use REAL, COMPLETE URLs that were returned by the Google search tool
+    - NEVER create, modify, or fabricate URLs - use only the exact URLs from search results
+    - All URLs must be complete (starting with http:// or https://)
+    - Include a comprehensive References section at the end of the report with all complete URLs
+    - For each risk question answer, include at least 2-3 different sources when possible
+    - Clearly indicate when information comes directly from the vendor's website vs. third-party sources
+    - If information cannot be verified with a reliable source, explicitly state this limitation
+    - VERIFICATION STEP: Before finalizing the report, verify that all URLs are properly formatted without extra characters like ']'
     """,
-    tools=[google_search],
-    output_key="final_report",
-    before_tool_callback=before_tool_callback,
-    after_tool_callback=after_tool_callback,
-    before_agent_callback=before_agent_callback,
-    before_model_callback=before_model_callback,
+    tools=[
+        scrape_and_extract_vendor_data,
+        mcp_toolset,  # Provides access to get_risk_questions and other MCP tools
+        vendor_researcher_tool
+    ]
 )
 
-# Define the main workflow using a SequentialAgent
-# This agent orchestrates the four specialized agents in sequence
-root_agent = SequentialAgent(
-    name="VendorRiskCoordinator",
-    sub_agents=[
-        url_validator_agent,
-        risk_questions_agent,
-        researcher_agent,
-        verification_agent
-    ],
-    description=GLOBAL_INSTRUCTION
-)
+# This is the agent that will be used by the main.py file
+root_agent = autonomous_vendor_risk_agent
