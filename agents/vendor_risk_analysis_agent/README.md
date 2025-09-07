@@ -157,15 +157,10 @@ The system automatically generates a comprehensive report after research is comp
 ## Conclusion
 
 The current vendor risk analysis system uses a simplified but effective architecture with a main orchestrator agent and specialized tools. This approach provides a streamlined user experience while maintaining the thoroughness and reliability needed for vendor risk assessment. The system's emphasis on explicit user confirmation, proper source citations, and comprehensive reporting ensures that the final risk assessment is both accurate and useful for business decision-making.
-  "full_research": "# Example Vendor Inc. Research\n...\n\n# Risk Assessment Q&A\n\n## Data Security\n**Q: Does the vendor have SOC 2 certification?**\nA: Yes, Example Vendor obtained SOC 2 Type II certification in 2023.\n\n**Q: Has the vendor experienced any data breaches in the last 5 years?**\nA: Yes, one minor breach in 2022 affecting 150 non-sensitive records...\n\n## Financial Stability\n..."
-}
-```
 
-**Tools Used**:
-- `get_risk_questions()` tool
-- Search engine tool for targeted research
+## Legacy Architecture Components
 
-### 4. The Verifier & Reporter Agent ✅
+The following sections describe components from the previous architecture that have been consolidated in the current implementation:
 
 **Purpose**: Ensure accuracy of analysis and produce a professional final report.
 
