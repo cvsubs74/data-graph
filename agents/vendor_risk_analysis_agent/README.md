@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document outlines the current implementation of the vendor risk analysis system. The architecture uses a simplified agent-as-tool pattern with an orchestrator agent that guides the user through the risk assessment process while leveraging specialized tools and sub-agents for specific tasks.
+This document outlines the implementation of the vendor risk analysis system. The architecture uses a simplified agent-as-tool pattern with an orchestrator agent that guides the user through the risk assessment process while leveraging specialized tools and sub-agents for specific tasks.
 
 ## System Architecture Overview
 
@@ -44,7 +44,7 @@ This document outlines the current implementation of the vendor risk analysis sy
 
 ## Current Implementation Workflow
 
-The current implementation uses a simplified architecture with a main orchestrator agent that guides the user through the entire risk assessment process. This agent leverages specialized tools and a researcher sub-agent to perform specific tasks.
+The implementation uses a simplified architecture with a main orchestrator agent that guides the user through the entire risk assessment process. This agent leverages specialized tools and a researcher sub-agent to perform specific tasks.
 
 ### 1. Autonomous Vendor Risk Agent (Main Orchestrator)
 
