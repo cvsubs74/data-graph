@@ -1,8 +1,8 @@
 """Tools package for project management agent."""
 
-from .tools import mcp_toolset, scrape_and_extract_document_data
+from .tools import mcp_toolset, parse_document
 
 __all__ = [
     'mcp_toolset', 
-    'scrape_and_extract_document_data'
+    'parse_document'
 ]

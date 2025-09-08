@@ -192,6 +192,25 @@ The system enforces strict entity detection standards:
 - Entity relationships must follow the defined ontology
 - Entity detection must be explainable and transparent
 
+## Implementation Considerations
+
+### User Interaction and Confirmation
+
+The system is designed with explicit user confirmation at key decision points:
+
+1. **After Document Parsing**: The user must confirm before proceeding to entity detection
+2. **After Entity Detection**: The user can review, add, remove, or modify detected entities
+3. **After Project Analysis**: The user can request revisions to the analysis
+
+### Entity Detection Requirements
+
+The system enforces strict entity detection standards:
+
+- Entities must be matched with defined entity types
+- Entity detection must provide confidence scores
+- Entity relationships must follow the defined ontology
+- Entity detection must be explainable and transparent
+
 ### Automatic Report Generation
 
 The system automatically generates a comprehensive report after analysis is completed:
@@ -203,137 +222,6 @@ The system automatically generates a comprehensive report after analysis is comp
 - Compliance Recommendations
 - Privacy Governance Insights
 - References and Sources
-
-## Installation and Setup
-
-### Prerequisites
-
-- Python 3.10 or higher
-- Google ADK CLI installed
-- Access to Google Cloud Platform (for deployment)
-- Access to the Data Graph MCP Server
-
-### Local Development Setup
-
-1. **Clone the repository**
-
-```bash
-git clone <repository-url>
-cd graphrag/agents/project_management_agent
-```
-
-2. **Create and activate a virtual environment**
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
-
-3. **Install dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-4. **Configure environment variables**
-
-Create a `.env` file in the project directory with the following variables:
-
-```
-MCP_SERVER_URL=https://data-graph-mcp-server-79797180773.us-central1.run.app/mcp
-GCP_PROJECT=graph-rag-app-20250811
-CLOUD_LOCATION=us-central1
-```
-
-### Running the Agent Locally
-
-To run the agent locally with the ADK web interface:
-
-```bash
-adk web
-```
-
-This will start the agent on http://localhost:8000 by default.
-
-## Deployment
-
-### Deploying to Google Cloud Run
-
-The project includes a deployment script for Google Cloud Run:
-
-```bash
-./deploy_to_cloud_run.sh
-```
-
-This script will:
-1. Authenticate with Google Cloud
-2. Set the project ID
-3. Deploy the agent to Cloud Run with a web UI
-
-You can customize the deployment by modifying the variables at the top of the script:
-
-```bash
-PROJECT_ID=your-project-id
-REGION=your-preferred-region
-SERVICE_NAME=your-service-name
-```
-
-## MCP Server Configuration
-
-The project management agent relies on the Data Graph MCP Server for entity management. The MCP server provides the following tools:
-
-- `get_entity_types`: Retrieves available entity types from the registry
-- `get_entity_parameters`: Gets parameters for specific entity types
-- `find_similar_entities`: Searches for similar entities in the system
-- `get_relationship_ontology`: Retrieves the relationship ontology for entities
-
-The MCP server URL is configured in `tools/tools.py` and should point to:
-
-```
-https://data-graph-mcp-server-79797180773.us-central1.run.app/mcp
-```
-
-## Usage Examples
-
-### Processing a Document URL
-
-1. Start the agent with `adk web`
-2. In the web interface, provide a document URL:
-   ```
-   I'd like to analyze this privacy policy: https://example.com/privacy-policy
-   ```
-3. The Document Parser Agent will extract and analyze the content
-4. Review the parsed document and confirm to proceed
-5. The Entity Detector Agent will identify entities in the document
-6. Review the detected entities and confirm to proceed
-7. The Project Analyzer Agent will provide a comprehensive analysis
-
-### Analyzing Existing Entities
-
-1. Start the agent with `adk web`
-2. Request an analysis of existing entities:
-   ```
-   I'd like to analyze the privacy implications of our current data processing activities
-   ```
-3. The agent will guide you through the process of selecting entities to analyze
-4. The Project Analyzer Agent will provide insights and recommendations
-
-## Troubleshooting
-
-### Common Issues
-
-1. **MCP Server Connection Errors**
-   - Verify the MCP server URL in `tools/tools.py`
-   - Check network connectivity to the MCP server
-
-2. **Entity Detection Issues**
-   - Ensure the document is properly parsed before entity detection
-   - Verify that the entity types are available in the MCP server
-
-3. **Deployment Failures**
-   - Check Google Cloud authentication
-   - Verify project ID and region settings
-   - Ensure the ADK CLI is properly installed
 
 ## Conclusion
 

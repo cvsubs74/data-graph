@@ -8,7 +8,7 @@ from google.adk.tools.tool_context import ToolContext
 
 from .config import Config
 from .prompts import GLOBAL_INSTRUCTION, DOCUMENT_PARSER_INSTRUCTION
-from .tools import scrape_and_extract_document_data
+from .tools.tools import parse_document
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -24,21 +24,20 @@ from pydantic import BaseModel, Field
 # Define input and output schemas
 class DocumentParserInput(BaseModel):
     """Input schema for document parser agent."""
-    document_url: str = Field(description="URL of the document to parse")
+    document_content: str = Field(description="Raw content of the document to parse")
 
 class DocumentParserOutput(BaseModel):
     """Output schema for document parser agent."""
-    url: str = Field(description="URL of the parsed document")
     parsed_content: str = Field(description="Parsed content of the document")
     status: str = Field(description="Status of the parsing operation")
 
 # Create the document parser agent
 document_parser_agent = LlmAgent(
     name="DocumentParserAgent",
-    description="Parses documents from URLs and extracts their content and structure",
+    description="Parses uploaded documents and extracts their content and structure",
     model=configs.agent_settings.model,
     instruction=GLOBAL_INSTRUCTION + "\n\n" + DOCUMENT_PARSER_INSTRUCTION,
-    tools=[scrape_and_extract_document_data],
+    tools=[parse_document],
     generate_content_config=types.GenerateContentConfig(
         temperature=configs.agent_settings.temperature,
         top_p=configs.agent_settings.top_p,

@@ -2,10 +2,8 @@
 
 import os
 import logging
-import requests
 import json
 from typing import Dict, Any, List, Optional
-from bs4 import BeautifulSoup
 from google.adk.tools.mcp_tool import MCPToolset, StreamableHTTPConnectionParams
 from ..config import Config
 
@@ -46,42 +44,35 @@ metadata_mcp_toolset = MCPToolset(
     ]
 )
 
-def scrape_and_extract_document_data(url: str) -> Dict[str, Any]:
-    """Scrapes a privacy policy from a URL and returns the raw content for LLM analysis.
+def parse_document(document_content: str) -> Dict[str, Any]:
+    """Parses a document and returns the processed content for LLM analysis.
     
     Args:
-        url: URL of the privacy policy to analyze
+        document_content: Raw text content of the document to analyze
         
     Returns:
-        Dict[str, Any]: Raw content for the LLM to analyze
+        Dict[str, Any]: Processed content for the LLM to analyze
     """
-    logger.info(f"Scraping privacy policy from {url}")
+    logger.info("Processing document content")
     
     try:
-        # Fetch the content from the URL
-        response = requests.get(url)
-        response.raise_for_status()
+        # Process the document content
+        # This is a simple implementation that just returns the raw content
+        # In a real implementation, you might want to do more processing
+        # such as removing irrelevant elements, formatting text, identifying sections, etc.
         
-        # Parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Extract text content
-        policy_text = soup.get_text(separator='\n', strip=True)
-        
-        # Return the raw text for the LLM to analyze
+        # Return the processed text for the LLM to analyze
         result = {
-            "url": url,
-            "policy_text": policy_text,
+            "document_text": document_content,
             "status": "success"
         }
         
-        logger.info("Successfully scraped privacy policy")
+        logger.info("Successfully processed document")
         return result
         
     except Exception as e:
-        logger.error(f"Error scraping privacy policy: {str(e)}")
+        logger.error(f"Error processing document: {str(e)}")
         return {
-            "url": url,
             "error": str(e),
             "status": "error"
         }
