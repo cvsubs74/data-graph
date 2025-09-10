@@ -11,7 +11,7 @@ from google.adk.agents import InvocationContext
 from google.genai import types
 
 from .config import Config
-from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset
+from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_pdf_report
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ configs = Config()
 # Create a specialized researcher agent with anti-hallucination settings
 researcher_agent = LlmAgent(
     name="VendorResearcherAgent",
-    model=configs.agent_settings.model,
+    model=configs.agent_settings.reasoning_model,
     instruction="""
     ## Persona
     You are a skilled **Research Analyst**. Your purpose is to answer complex questions by intelligently synthesizing information, drawing logical conclusions, and **meticulously citing every source** that informs your reasoning.
@@ -37,10 +37,12 @@ researcher_agent = LlmAgent(
     2.  **Strict Sourcing Mandate**: Every factual claim you use in your reasoning **MUST** be supported by an inline numerical citation (e.g., `[1]`, `[2]`).
         - At the end of your entire response, you must compile a consolidated `References` list.
         - Each entry in the list must be numbered and include the source's title and the **full, exact URL** from the `Google Search` tool.
+        - Format each reference as a proper clickable markdown link: `[n] Source Title: [https://www.example.com](https://www.example.com)`
         - **NEVER** modify, shorten, or fabricate URLs.
         - **CRITICAL**: ONLY use URLs that appear in the actual search results. NEVER create your own URLs.
         - **CRITICAL**: NEVER include any URLs containing 'vertexai' or similar AI-related domains.
         - **CRITICAL**: If a URL is not from the original search results or contains 'vertexai', do not use it.
+        - **CRITICAL**: Ensure all URLs are properly formatted as clickable markdown links.
     3.  **No Fabrication**: Your reasoning must be a direct, logical extension of the cited sources. **NEVER** introduce external knowledge.
     4.  **Acknowledge Limits**: If the search results do not contain enough information, you **MUST** state: "Insufficient information to provide a confident answer."
 
@@ -67,11 +69,15 @@ researcher_agent = LlmAgent(
     ---
 
     **References**:
-    [1] Vendor Privacy Policy: https://www.exact-url-from-search.com/privacy
-    [2] Vendor Compliance Page: https://www.exact-url-from-search.com/compliance
-    [3] Third-Party Security Audit: https://www.another-url.com/audit
+    [1] Vendor Privacy Policy: [https://www.exact-url-from-search.com/privacy](https://www.exact-url-from-search.com/privacy)
+    [2] Vendor Compliance Page: [https://www.exact-url-from-search.com/compliance](https://www.exact-url-from-search.com/compliance)
+    [3] Third-Party Security Audit: [https://www.another-url.com/audit](https://www.another-url.com/audit)
     
-    IMPORTANT: All URLs above MUST be directly copied from search results. NEVER include URLs containing 'vertexai.ai' or similar AI domains. If you find yourself creating URLs that weren't in the search results, STOP and reconsider your approach.
+    IMPORTANT: 
+    - All URLs above MUST be directly copied from search results. 
+    - NEVER include URLs containing 'vertexai.ai' or similar AI domains. 
+    - ALWAYS format URLs as clickable markdown links using the format: [URL](URL)
+    - If you find yourself creating URLs that weren't in the search results, STOP and reconsider your approach.
     """,
     # Configure LLM generation parameters to allow for more synthesis
     generate_content_config=types.GenerateContentConfig(
@@ -115,13 +121,15 @@ autonomous_vendor_risk_agent = LlmAgent(
     > - Conduct in-depth, sourced, and reasoned research on vendors.
     > - Independently audit all research for accuracy.
     > - Produce comprehensive, professional risk assessment reports.
+    > - Generate beautifully formatted, downloadable PDF reports.
     >
     > **Our Workflow:**
     > 1.  First, you'll provide a vendor URL, and I will validate it.
     > 2.  Next, I'll analyze the website to gather initial data.
     > 3.  Then, I'll generate relevant risk questions for our assessment.
     > 4.  After that, my research analyst will synthesize sourced answers.
-    > 5.  Finally, I will compile all information into a final report, validating all references.
+    > 5.  I will compile all information into a final report, validating all references.
+    > 6.  Finally, I'll generate a beautifully formatted PDF report that you can download.
     >
     > **To get started, please provide the URL of the vendor you'd like to assess.**"
 
@@ -153,9 +161,16 @@ autonomous_vendor_risk_agent = LlmAgent(
           1. Extract all URLs from the research findings references section
           2. Use the `validate_url` tool to check each URL's accessibility
           3. Include only valid URLs in the final report, marking them with checkmarks (✓)
-          4. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
-        - **Output**: Present the clean, final report.
-        - **Confirm**: End by asking: "**Would you like me to make any revisions to this report?**"
+          4. Ensure all URLs are formatted as proper clickable markdown links using the format: `[URL](URL)`
+          5. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
+          6. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
+        - **Output**: Present the clean, final report with properly formatted clickable links.
+        - **Confirm**: Ask: "**Would you like me to generate a downloadable PDF version of this report?**"
+
+    6.  **PDF Report Generation**:
+        - **Action**: After confirmation, use the `generate_pdf_report` function with the report content and vendor name.
+        - **Output**: Present the PDF generation results, including the file path and download link.
+        - **Confirm**: End by asking: "**Is there anything else you would like me to do with this report?**"
 
     ## Critical Directives
     - **One Step at a Time**: Complete each step of the workflow fully before moving to the next.
@@ -182,14 +197,24 @@ autonomous_vendor_risk_agent = LlmAgent(
     (Provide clear, actionable recommendations based on the verified findings, citing specific findings as evidence.)
 
     ## 5. Validated References
-    (Include only the validated references with checkmarks (✓) indicating they have been verified as accessible.)
+    (Include only the validated references with checkmarks (✓) indicating they have been verified as accessible. Format each reference as a proper clickable markdown link using the format: `[n] Source Title: [https://www.example.com](https://www.example.com)`. Ensure all URLs are properly formatted as clickable links.)
     ```
+    
+    ## Reference Formatting Requirements
+    When validating and including references in the final report, you MUST follow these guidelines:
+    
+    1. **Clickable Links**: All URLs must be formatted as proper markdown links: `[URL](URL)`
+    2. **Validation**: Only include references that have been successfully validated with the `validate_url` tool
+    3. **Formatting**: Each reference should follow this format: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
+    4. **Verification**: The checkmark (✓) indicates the URL has been verified as accessible
+    5. **Completeness**: Never truncate or modify URLs - use the exact, full URL from the original source
     """,
     tools=[
         validate_url,
         scrape_and_extract_vendor_data,
         mcp_toolset,
-        vendor_researcher_tool
+        vendor_researcher_tool,
+        generate_pdf_report
     ]
 )
 

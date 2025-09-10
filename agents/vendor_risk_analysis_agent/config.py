@@ -13,6 +13,8 @@ class AgentModel(BaseModel):
     """Agent model settings."""
     name: str = Field(default="vendor_risk_analysis_agent")
     model: str = Field(default="gemini-2.5-flash")
+    fast_model: str = Field(default="gemini-2.5-flash")
+    reasoning_model: str = Field(default="gemini-2.5-pro")
 
 
 class Config(BaseSettings):
@@ -34,34 +36,14 @@ class Config(BaseSettings):
         default="https://vendor-risk-mcp-server-79797180773.us-central1.run.app/mcp"
     )
     
-    # Coordinator agent settings
-    coordinator_settings: AgentModel = Field(
-        default=AgentModel(name="vendor_risk_coordinator_agent")
-    )
-    
-    # Initializer agent settings
-    initializer_settings: AgentModel = Field(
-        default=AgentModel(name="initializer_agent")
-    )
-    
-    # Researcher agent settings
-    researcher_settings: AgentModel = Field(
-        default=AgentModel(name="researcher_agent")
-    )
-    
-    # Analyst agent settings
-    analyst_settings: AgentModel = Field(
-        default=AgentModel(name="analyst_agent")
-    )
-    
-    # Verifier agent settings
-    verifier_settings: AgentModel = Field(
-        default=AgentModel(name="verifier_agent")
-    )
-    
     # Optional GCP settings
     GCP_PROJECT: str = Field(default="")
     CLOUD_PROJECT: str = Field(default="")
     CLOUD_LOCATION: str = Field(default="us-central1")
     GENAI_USE_VERTEXAI: str = Field(default="1")
     API_KEY: str | None = Field(default=None)
+    
+    # Google Cloud Storage settings for PDF reports
+    GCS_BUCKET_NAME: str = Field(default="vendor-risk-reports")
+    GCS_PDF_FOLDER: str = Field(default="reports")
+    GCS_PDF_PUBLIC_URL: str = Field(default="https://storage.googleapis.com/{bucket_name}/{folder}/{filename}")
