@@ -11,7 +11,7 @@ from google.adk.agents import InvocationContext
 from google.genai import types
 
 from .config import Config
-from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_html_report
+from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_html_report, get_valid_references
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -203,12 +203,14 @@ autonomous_vendor_risk_agent = LlmAgent(
 
     5.  **Final Report Generation**:
         - **Action**: After confirmation, do the following:
-          1. Extract all URLs from the research findings references section
-          2. Use the `validate_url` tool to check each URL's accessibility
-          3. Include only valid URLs in the final report, marking them with checkmarks (✓)
-          4. Ensure all URLs are formatted as proper clickable markdown links using the format: `[URL](URL)`
-          5. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
-          6. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
+          1. Extract all URLs from the research findings references section into a list
+          2. Use the `get_valid_references` tool with this list of URLs to check all URLs at once for accessibility
+          3. From the tool result, access the `valid_urls` list using `result["valid_urls"]` to get only the validated URLs
+          4. Include only these valid URLs in the final report, marking them with checkmarks (✓)
+          5. Ensure all URLs are formatted as proper clickable markdown links using the format: `[URL](URL)`
+          6. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
+          7. You can also access invalid URLs with `result["invalid_urls"]` if you need to inform the user about problematic sources
+          8. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
         - **Output**: Present the clean, final report with properly formatted clickable links.
         - **Confirm**: Ask: "**Would you like me to generate a downloadable HTML version of this report?**"
 
@@ -256,6 +258,7 @@ autonomous_vendor_risk_agent = LlmAgent(
     """,
     tools=[
         validate_url,
+        get_valid_references,
         scrape_and_extract_vendor_data,
         mcp_toolset,
         vendor_researcher_tool,

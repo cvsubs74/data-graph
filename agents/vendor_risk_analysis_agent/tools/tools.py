@@ -9,7 +9,7 @@ import tempfile
 import uuid
 import io
 from datetime import datetime
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, List
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from google.adk.tools.mcp_tool import MCPToolset, StreamableHTTPConnectionParams
@@ -80,15 +80,59 @@ def scrape_and_extract_vendor_data(url: str) -> Dict[str, Any]:
             "status": "error"
         }
 
+def get_valid_references(urls: List[str]) -> Dict[str, Any]:
+    """
+    Validates a list of URLs and returns only the valid ones.
+    
+    Args:
+        urls: List of URLs to validate
+        
+    Returns:
+        Dict[str, Any]: Results containing valid URLs, invalid URLs, and validation details
+    """
+    logger.info(f"Validating {len(urls)} URLs")
+    
+    valid_urls = []
+    invalid_urls = []
+    validation_details = {}
+    
+    # Process each URL in the list
+    for url in urls:
+        # Skip empty URLs
+        if not url or not url.strip():
+            continue
+            
+        # Validate the URL
+        validation_result = validate_url(url)
+        
+        # Store the validation details
+        validation_details[url] = validation_result
+        
+        # Add to appropriate list based on validation result
+        if validation_result.get("is_valid", False):
+            valid_urls.append(url)
+        else:
+            invalid_urls.append(url)
+    
+    return {
+        "status": "success",
+        "valid_urls": valid_urls,
+        "invalid_urls": invalid_urls,
+        "validation_details": validation_details,
+        "total_urls": len(urls),
+        "valid_count": len(valid_urls),
+        "invalid_count": len(invalid_urls)
+    }
+
 def validate_url(url: str) -> Dict[str, Any]:
     """
-        Validates if a URL is properly formatted and accessible.
+    Validates if a URL is properly formatted and accessible.
 
-        Args:
-            url: URL to validate
-            
-        Returns:
-            Dict[str, Any]: Validation results including status and details
+    Args:
+        url: URL to validate
+        
+    Returns:
+        Dict[str, Any]: Validation results including status and details
     """
     logger.info(f"Validating URL: {url}")
     
