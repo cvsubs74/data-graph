@@ -15,8 +15,7 @@ from urllib.parse import urlparse
 from google.adk.tools.mcp_tool import MCPToolset, StreamableHTTPConnectionParams
 from ..config import Config
 
-# PDF generation imports
-from weasyprint import HTML, CSS
+# HTML generation imports
 from jinja2 import Environment, FileSystemLoader
 
 # Google Cloud Storage imports
@@ -136,18 +135,18 @@ def validate_url(url: str) -> Dict[str, Any]:
 # The MCP toolset automatically provides access to all tools exposed by the MCP server
 # For example: mcp_toolset.get_risk_questions(), mcp_toolset.search_web(), etc.
 
-def generate_pdf_report(report_content: str, vendor_name: str) -> Dict[str, Any]:
+def generate_html_report(report_content: str, vendor_name: str) -> Dict[str, Any]:
     """
-    Generates a beautifully formatted PDF report from markdown content and uploads it to Google Cloud Storage.
+    Generates a beautifully formatted HTML report from markdown content and uploads it to Google Cloud Storage.
     
     Args:
         report_content: The markdown content of the report
         vendor_name: The name of the vendor for the report title
         
     Returns:
-        Dict[str, Any]: Information about the generated PDF including the public download URL
+        Dict[str, Any]: Information about the generated HTML report including the public download URL
     """
-    logger.info(f"Generating PDF report for {vendor_name}")
+    logger.info(f"Generating HTML report for {vendor_name}")
     
     try:
         # Create templates directory if it doesn't exist
@@ -437,17 +436,18 @@ def generate_pdf_report(report_content: str, vendor_name: str) -> Dict[str, Any]
             content=html_content
         )
         
-        # Create a unique filename for the PDF
+        # Create a unique filename for the HTML report
         report_id = str(uuid.uuid4())[:8]
         sanitized_vendor_name = vendor_name.replace(' ', '_').replace('/', '_').lower()
-        pdf_filename = f"{sanitized_vendor_name}_{report_id}_risk_assessment.pdf"
+        html_filename = f"{sanitized_vendor_name}_{report_id}_risk_assessment.html"
         
         # First create a local temporary file
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
-            temp_pdf_path = temp_file.name
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as temp_file:
+            temp_html_path = temp_file.name
             
-        # Generate PDF from HTML to the temporary file
-        HTML(string=rendered_html).write_pdf(temp_pdf_path)
+        # Write the HTML to the temporary file
+        with open(temp_html_path, 'w', encoding='utf-8') as f:
+            f.write(rendered_html)
         
         # Upload to Google Cloud Storage
         try:
@@ -463,12 +463,15 @@ def generate_pdf_report(report_content: str, vendor_name: str) -> Dict[str, Any]
                 bucket = storage_client.create_bucket(bucket_name, location=configs.CLOUD_LOCATION)
             
             # Define the path in the bucket
-            gcs_folder = configs.GCS_PDF_FOLDER
-            gcs_path = f"{gcs_folder}/{pdf_filename}" if gcs_folder else pdf_filename
+            gcs_folder = configs.GCS_PDF_FOLDER  # Reusing the same folder config
+            gcs_path = f"{gcs_folder}/{html_filename}" if gcs_folder else html_filename
             
             # Upload the file
             blob = bucket.blob(gcs_path)
-            blob.upload_from_filename(temp_pdf_path)
+            blob.upload_from_filename(temp_html_path)
+            
+            # Set the content type to HTML
+            blob.content_type = 'text/html'
             
             # Make the file publicly accessible
             blob.make_public()
@@ -477,26 +480,26 @@ def generate_pdf_report(report_content: str, vendor_name: str) -> Dict[str, Any]
             public_url = blob.public_url
             
             # Clean up the temporary file
-            os.unlink(temp_pdf_path)
+            os.unlink(temp_html_path)
             
-            logger.info(f"Successfully uploaded PDF report to GCS: {public_url}")
+            logger.info(f"Successfully uploaded HTML report to GCS: {public_url}")
             
             # Format the URL using the template from config if available
-            if configs.GCS_PDF_PUBLIC_URL:
+            if configs.GCS_PDF_PUBLIC_URL:  # Reusing the same config
                 public_url = configs.GCS_PDF_PUBLIC_URL.format(
                     bucket_name=bucket_name,
                     folder=gcs_folder,
-                    filename=pdf_filename
+                    filename=html_filename
                 )
             
             return {
                 "status": "success",
-                "filename": pdf_filename,
+                "filename": html_filename,
                 "report_id": report_id,
                 "bucket_name": bucket_name,
                 "gcs_path": gcs_path,
                 "download_url": public_url,
-                "message": "PDF report generated and uploaded to Google Cloud Storage"
+                "message": "HTML report generated and uploaded to Google Cloud Storage"
             }
             
         except Exception as gcs_error:
@@ -506,24 +509,24 @@ def generate_pdf_report(report_content: str, vendor_name: str) -> Dict[str, Any]
             output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'reports')
             os.makedirs(output_dir, exist_ok=True)
             
-            pdf_path = os.path.join(output_dir, pdf_filename)
-            os.rename(temp_pdf_path, pdf_path)
+            html_path = os.path.join(output_dir, html_filename)
+            os.rename(temp_html_path, html_path)
             
-            logger.info(f"Fallback: Generated PDF report locally at {pdf_path}")
+            logger.info(f"Fallback: Generated HTML report locally at {html_path}")
             return {
                 "status": "partial_success",
-                "pdf_path": pdf_path,
-                "filename": pdf_filename,
+                "html_path": html_path,
+                "filename": html_filename,
                 "report_id": report_id,
-                "download_url": f"file://{pdf_path}",
-                "message": "PDF report generated locally (GCS upload failed)",
+                "download_url": f"file://{html_path}",
+                "message": "HTML report generated locally (GCS upload failed)",
                 "error": str(gcs_error)
             }
         
     except Exception as e:
-        logger.error(f"Error generating PDF report: {str(e)}")
+        logger.error(f"Error generating HTML report: {str(e)}")
         return {
             "status": "error",
             "error": str(e),
-            "details": "Failed to generate PDF report"
+            "details": "Failed to generate HTML report"
         }

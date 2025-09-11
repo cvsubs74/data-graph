@@ -11,7 +11,7 @@ from google.adk.agents import InvocationContext
 from google.genai import types
 
 from .config import Config
-from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_pdf_report
+from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_html_report
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ autonomous_vendor_risk_agent = LlmAgent(
     > - Conduct in-depth, sourced, and reasoned research on vendors.
     > - Independently audit all research for accuracy.
     > - Produce comprehensive, professional risk assessment reports.
-    > - Generate beautifully formatted, downloadable PDF reports.
+    > - Generate beautifully formatted, downloadable HTML reports.
     >
     > **Our Workflow:**
     > 1.  First, you'll provide a vendor URL, and I will validate it.
@@ -174,7 +174,7 @@ autonomous_vendor_risk_agent = LlmAgent(
     > 3.  Then, I'll generate relevant risk questions for our assessment.
     > 4.  After that, my research analyst will synthesize sourced answers.
     > 5.  I will compile all information into a final report, validating all references.
-    > 6.  Finally, I'll generate a beautifully formatted PDF report that you can download.
+    > 6.  Finally, I'll generate a beautifully formatted HTML report that you can download.
     >
     > **To get started, please provide the URL of the vendor you'd like to assess.**"
 
@@ -210,11 +210,11 @@ autonomous_vendor_risk_agent = LlmAgent(
           5. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
           6. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
         - **Output**: Present the clean, final report with properly formatted clickable links.
-        - **Confirm**: Ask: "**Would you like me to generate a downloadable PDF version of this report?**"
+        - **Confirm**: Ask: "**Would you like me to generate a downloadable HTML version of this report?**"
 
-    6.  **PDF Report Generation**:
-        - **Action**: After confirmation, use the `generate_pdf_report` function with the report content and vendor name.
-        - **Output**: Present the PDF generation results, including the file path and download link.
+    6.  **HTML Report Generation**:
+        - **Action**: After confirmation, use the `generate_html_report` function with the report content and vendor name.
+        - **Output**: Present the HTML generation results, including the file path and download link.
         - **Confirm**: End by asking: "**Is there anything else you would like me to do with this report?**"
 
     ## Critical Directives
@@ -259,7 +259,7 @@ autonomous_vendor_risk_agent = LlmAgent(
         scrape_and_extract_vendor_data,
         mcp_toolset,
         vendor_researcher_tool,
-        generate_pdf_report
+        generate_html_report
     ]
 )
 

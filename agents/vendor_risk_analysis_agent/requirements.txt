@@ -8,8 +8,7 @@ python-dotenv
 beautifulsoup4
 bs4
 validators
-# PDF generation dependencies
-weasyprint>=54.0
+# HTML report generation dependencies
 jinja2>=3.0.0
 markdown>=3.3.0
 # Google Cloud Storage dependencies

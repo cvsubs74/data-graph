@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from google.adk.rest import create_app
 from google.adk.run import Runner
 
-# Import the simplified agent instead of the original agent
-from .simplified_agent import root_agent
+# Import the root agent from agent.py
+from vendor_risk_analysis_agent.agent import root_agent
 
 # Configure logging
 logging.basicConfig(

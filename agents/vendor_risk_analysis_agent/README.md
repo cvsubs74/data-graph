@@ -10,7 +10,7 @@ The vendor risk analysis system employs a multi-agent architecture with speciali
 
 1. **Orchestrator Agent**: A central agent that coordinates the entire workflow and interacts with the user
 2. **Specialized Research Agent**: A dedicated agent optimized for in-depth research with advanced reasoning capabilities
-3. **Tool Suite**: A collection of specialized tools for web scraping, question generation, and PDF report creation
+3. **Tool Suite**: A collection of specialized tools for web scraping, question generation, and HTML report creation
 4. **Backend Services**: Supporting services including MCP server, Google Search API, and Google Cloud Storage
 5. **Model Specialization**: Different LLM models optimized for specific tasks (reasoning vs. interaction)
 
@@ -43,7 +43,7 @@ This architecture enables a structured, step-by-step assessment process with exp
 │                                                        ▼               │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │                                                                 │   │
-│  │                     PDF Report Generator                        │   │
+│  │                     HTML Report Generator                       │   │
 │  │                     (Google Cloud Storage)                      │   │
 │  │                                                                 │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
@@ -182,21 +182,21 @@ The vendor risk analysis system employs a comprehensive suite of specialized too
 - Customizable question sets based on vendor characteristics
 - Seamless integration with MCP server infrastructure
 
-### 3. PDF Report Generator
+### 3. HTML Report Generator
 
-**Purpose**: Creates professional, beautifully formatted PDF reports with proper styling and clickable references.
+**Purpose**: Creates professional, beautifully formatted HTML reports with proper styling and clickable references.
 
 **Technical Implementation**:
-- **Function**: `generate_pdf_report`
-- **Dependencies**: WeasyPrint, Jinja2, BeautifulSoup, Google Cloud Storage
+- **Function**: `generate_html_report`
+- **Dependencies**: Jinja2, BeautifulSoup, Google Cloud Storage
 - **Location**: Implemented in tools.py
 
 **Core Functionalities**:
 - Converts markdown content to properly formatted HTML
 - Processes and enhances reference links to ensure they're clickable
 - Applies professional styling through CSS templates
-- Generates high-quality PDF documents
-- Uploads PDFs to Google Cloud Storage
+- Generates high-quality HTML documents
+- Uploads HTML files to Google Cloud Storage
 - Creates public download URLs for easy access
 - Implements fallback to local storage if cloud upload fails
 
@@ -212,7 +212,6 @@ The vendor risk analysis system employs a comprehensive suite of specialized too
 - HTML template system with Jinja2
 - CSS styling framework for professional appearance
 - BeautifulSoup for advanced HTML manipulation
-- WeasyPrint for high-quality PDF rendering
 - Google Cloud Storage integration for file hosting
 
 ## Backend Services
@@ -263,7 +262,7 @@ The vendor risk analysis system is supported by a robust set of backend services
 
 ### 3. Google Cloud Storage
 
-**Purpose**: Provides secure, scalable storage for generated PDF reports with public access capabilities.
+**Purpose**: Provides secure, scalable storage for generated HTML reports with public access capabilities.
 
 **Technical Implementation**:
 - **Integration**: Google Cloud Storage client library
@@ -360,20 +359,20 @@ The vendor risk analysis system follows a structured, step-by-step workflow with
 - Report structure follows standardized template
 - User input is captured for feedback
 
-### 6. PDF Generation and Delivery
+### 6. HTML Generation and Delivery
 
 **Process**:
-- User requests PDF version of the report
-- Markdown report is converted to beautifully formatted PDF
-- PDF is uploaded to Google Cloud Storage
+- User requests HTML version of the report
+- Markdown report is converted to beautifully formatted HTML
+- HTML file is uploaded to Google Cloud Storage
 - Public download URL is generated and provided to user
 - User receives the final report with download link
 
 **Technical Implementation**:
-- `generate_pdf_report` function handles PDF creation
+- `generate_html_report` function handles HTML creation
 - Markdown is converted to HTML with Jinja2 templates
 - HTML is processed to ensure clickable links
-- WeasyPrint generates the final PDF
+- BeautifulSoup enhances HTML structure and formatting
 - Google Cloud Storage client handles file upload
 - Public URL is generated for easy access
 
@@ -392,7 +391,7 @@ The vendor risk analysis system uses a centralized configuration system to manag
 - **Agent Models**: Configuration for different LLM models (flash vs. reasoning)
 - **MCP Server**: Connection settings for the vendor risk MCP server
 - **Google Cloud**: Project ID, location, and authentication settings
-- **Storage**: Bucket names, folder structures, and URL formats for PDF storage
+- **Storage**: Bucket names, folder structures, and URL formats for HTML report storage
 
 **Features**:
 - Type validation for all configuration parameters
@@ -419,23 +418,22 @@ The system uses Google's Agent Development Kit (ADK) for agent implementation:
 - Specialized model selection based on task complexity
 - Comprehensive instruction sets with detailed guidance
 
-### PDF Generation Pipeline
+### HTML Generation Pipeline
 
-The PDF generation system uses a sophisticated pipeline for high-quality reports:
+The HTML generation system uses a sophisticated pipeline for high-quality reports:
 
 **Implementation**:
-- **Conversion**: Markdown → HTML → PDF pipeline
+- **Conversion**: Markdown → HTML pipeline
 - **Templating**: Jinja2 for HTML template rendering
 - **Styling**: Custom CSS for professional appearance
 - **Processing**: BeautifulSoup for HTML enhancement
-- **Rendering**: WeasyPrint for PDF generation
 - **Storage**: Google Cloud Storage for file hosting
 
 **Pipeline Stages**:
 1. **Markdown Processing**: Enhanced markdown with proper link formatting
 2. **HTML Generation**: Template-based HTML with dynamic content
 3. **Post-Processing**: BeautifulSoup for link enhancement and structure improvements
-4. **PDF Rendering**: High-quality PDF generation with proper styling
+4. **Final HTML**: High-quality HTML document with proper styling
 5. **Cloud Upload**: Secure upload to Google Cloud Storage
 6. **URL Generation**: Public URL creation for easy access
 
@@ -472,13 +470,13 @@ Key strengths of the architecture include:
 
 1. **Specialized Agent Roles**: The separation between the orchestrator and researcher agents allows each to excel at their specific tasks, with models optimized for their particular requirements.
 
-2. **Comprehensive Tool Suite**: The system's specialized tools for web scraping, question management, and PDF generation provide powerful capabilities at each stage of the assessment process.
+2. **Comprehensive Tool Suite**: The system's specialized tools for web scraping, question management, and HTML report generation provide powerful capabilities at each stage of the assessment process.
 
 3. **Structured Workflow**: The step-by-step workflow with explicit user confirmation ensures thorough assessments while maintaining user control throughout the process.
 
 4. **Evidence-Based Research**: The researcher agent's advanced capabilities ensure that all findings are properly sourced and cited, providing trustworthy assessments.
 
-5. **Professional Reporting**: The sophisticated PDF generation pipeline creates beautiful, professional reports with proper formatting and clickable references.
+5. **Professional Reporting**: The sophisticated HTML generation pipeline creates beautiful, professional reports with proper formatting and clickable references.
 
 6. **Cloud Integration**: Google Cloud Storage integration ensures reports are easily accessible and shareable across the organization.
 

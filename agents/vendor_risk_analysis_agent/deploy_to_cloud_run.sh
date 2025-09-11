@@ -43,7 +43,7 @@ echo "Setting Google Cloud project to $PROJECT_ID..."
 gcloud config set project "$PROJECT_ID"
 
 # Deploy using ADK CLI
-echo "Deploying vendor risk analysis agent to Cloud Run..."
+echo "Deploying project management agent to Cloud Run..."
 adk deploy cloud_run \
     --project="$PROJECT_ID" \
     --region="$REGION" \
