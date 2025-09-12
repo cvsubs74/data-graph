@@ -6,69 +6,6 @@ from typing import Dict, List, Any, Optional, AsyncGenerator
 
 from pydantic import BaseModel, Field
 
-# Define Pydantic schemas for structured output
-class ResearchQuestion(BaseModel):
-    """Schema for a research question with answer and reasoning."""
-    
-    question: str = Field(
-        description="The original question text"
-    )
-    answer: str = Field(
-        description="The synthesized answer based on research"
-    )
-    reasoning: str = Field(
-        description="Detailed reasoning with inline citations"
-    )
-
-
-class ResearchCategory(BaseModel):
-    """Schema for a category of research questions."""
-    
-    name: str = Field(
-        description="The name of the category (e.g., 'Security', 'Compliance')"
-    )
-    questions: List[ResearchQuestion] = Field(
-        description="List of questions and answers in this category"
-    )
-
-
-class Reference(BaseModel):
-    """Schema for a reference citation."""
-    
-    id: int = Field(
-        description="The reference number used in citations"
-    )
-    title: str = Field(
-        description="The title of the reference source"
-    )
-    url: str = Field(
-        description="The full URL of the reference source"
-    )
-    is_valid: Optional[bool] = Field(
-        None, 
-        description="Whether the URL has been validated as accessible"
-    )
-
-
-class ResearchOutput(BaseModel):
-    """Schema for the complete research output."""
-    
-    vendor_name: str = Field(
-        description="The name of the vendor being researched"
-    )
-    vendor_url: str = Field(
-        description="The URL of the vendor's website"
-    )
-    categories: List[ResearchCategory] = Field(
-        description="List of research categories with their questions and answers"
-    )
-    summary: str = Field(
-        description="A brief summary of key findings across all questions"
-    )
-    references: List[Reference] = Field(
-        description="List of all references cited in the research"
-    )
-
 from google.adk.agents import LlmAgent, BaseAgent
 from google.adk.tools import google_search
 from google.adk.tools.agent_tool import AgentTool
@@ -77,7 +14,8 @@ from google.adk.agents import InvocationContext
 from google.genai import types
 
 from .config import Config
-from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_html_report, get_valid_references
+from .tools.tools import scrape_and_extract_vendor_data, validate_url, mcp_toolset, generate_html_report
+from .schemas import ResearchOutput
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -116,7 +54,8 @@ Respond ONLY with a JSON object matching this exact schema:
    - **NEVER** modify, shorten, or fabricate URLs - copy them exactly as they appear in the search results.
    - **CRITICAL**: If a URL is not explicitly provided in the search results, DO NOT include it.
    - **CRITICAL**: NEVER reconstruct or guess URLs based on article titles or descriptions.
-   - **CRITICAL**: NEVER include any URLs containing 'vertexai' or similar AI-related domains.
+   - **CRITICAL**: NEVER include any URLs containing 'vertexai', 'vertexaisearch', or similar AI-related domains.
+   - **CRITICAL**: Filter out any URLs that contain 'vertexaisearch.cloud.google.com' or 'vertexaisearch.google.com' - these are internal redirect URLs and will fail validation.
 3. **No Fabrication**: Your reasoning must be a direct, logical extension of the cited sources. **NEVER** introduce external knowledge.
 4. **Acknowledge Limits**: If the search results do not contain enough information, state "Insufficient information to provide a confident answer" in the answer field.
 
@@ -170,7 +109,7 @@ vendor_researcher_tool = AgentTool(
 # Create the simplified orchestrator agent
 autonomous_vendor_risk_agent = LlmAgent(
     name="AutonomousVendorRiskAgent",
-    model=configs.agent_settings.model,
+    model=configs.agent_settings.reasoning_model,
     instruction="""
     ## Persona
     You are an expert vendor risk analyst and workflow orchestrator. Your role is to guide a user through a structured, step-by-step vendor risk assessment process. You are professional, clear, and methodical. You never proceed without explicit user confirmation.
@@ -202,25 +141,31 @@ autonomous_vendor_risk_agent = LlmAgent(
     > **To get started, please provide the URL of the vendor you'd like to assess.**"
 
     ## Strict Step-by-Step Workflow
-    After the introduction, you must follow this sequence precisely. **DO NOT** proceed to the next step without explicit user confirmation (e.g., "Yes," "Proceed," "Continue").
+    After the introduction, you must follow this sequence precisely. **DO NOT** proceed to the next step without explicit user confirmation (e.g., "Yes," "Proceed," "Continue") except for the automatic progression from URL validation to website analysis when a valid URL is provided.
 
     1.  **URL Validation**:
         - **Action**: Once the user provides a URL, use the `validate_url` tool.
         - **Output**: Present the result clearly (e.g., "The URL is valid and accessible.").
-        - **Confirm**: Ask: "**Shall I proceed with analyzing the website content?**"
+        - **Next Steps**:
+          - If the URL is valid (is_valid=true), automatically proceed with website analysis without asking for confirmation.
+          - If the URL is invalid, clearly explain the issue and ask the user to provide a valid URL.
 
     2.  **Website Analysis**:
-        - **Action**: After confirmation, use the `scrape_and_extract_vendor_data` tool.
+        - **Action**: After URL validation confirms the URL is valid, use the `scrape_and_extract_vendor_data` tool.
         - **Output**: Present the key information extracted from the site.
         - **Confirm**: Ask: "**Shall I proceed with generating risk questions?**"
 
     3.  **Question Generation**:
         - **Action**: After confirmation, use the `get_risk_questions` function from the `mcp_toolset`.
-        - **Output**: Display the generated list of questions.
+        - **Output**: Display the generated list of questions organized by categories.
+        - **Important**: When the user selects categories, you MUST include ALL questions from those categories exactly as they were generated. Do NOT create your own questions or modify the generated ones.
         - **Confirm**: Ask: "**Shall I proceed with researching the answers to these questions?**"
 
     4.  **Vendor Research**:
-        - **Action**: After confirmation, use the `vendor_researcher_tool`.
+        - **Action**: After confirmation, do the following:
+          1. Pass the EXACT questions from the selected categories to the `vendor_researcher_tool`
+          2. Include the complete category structure with all questions exactly as they were generated
+          3. Do NOT modify, rephrase, or create new questions - use only the questions from the `get_risk_questions` output
         - **Output**: Present the full research findings, including reasoning and source citations.
         - **Confirm**: Ask: "**The research is complete. Shall I proceed with generating the final report?**"
 
@@ -234,12 +179,12 @@ autonomous_vendor_risk_agent = LlmAgent(
              - `summary`: A brief summary of key findings
              - `references`: A list of all references cited in the research
           3. Extract all URLs from the references list by accessing each reference's `url` field
-          4. Use the `get_valid_references` tool with this list of URLs to check all URLs at once for accessibility
-          5. From the tool result, access the `valid_urls` list using `result["valid_urls"]` to get only the validated URLs
+          4. For each URL, use the `validate_url` tool to check if it's accessible
+          5. Keep track of valid and invalid URLs based on the `is_valid` field in the validation result
           6. Include only valid URLs in the final report, marking them with checkmarks (✓)
           7. Ensure all URLs are formatted as proper clickable markdown links using the format: `[URL](URL)`
           8. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
-          9. You can also access invalid URLs with `result["invalid_urls"]` if you need to inform the user about problematic sources
+          9. For invalid URLs, you can inform the user about these problematic sources
           10. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
         - **Output**: Present the clean, final report with properly formatted clickable links.
         - **Confirm**: Ask: "**Would you like me to generate a downloadable HTML version of this report?**"
@@ -288,7 +233,6 @@ autonomous_vendor_risk_agent = LlmAgent(
     """,
     tools=[
         validate_url,
-        get_valid_references,
         scrape_and_extract_vendor_data,
         mcp_toolset,
         vendor_researcher_tool,

@@ -80,50 +80,6 @@ def scrape_and_extract_vendor_data(url: str) -> Dict[str, Any]:
             "status": "error"
         }
 
-def get_valid_references(urls: List[str]) -> Dict[str, Any]:
-    """
-    Validates a list of URLs and returns only the valid ones.
-    
-    Args:
-        urls: List of URLs to validate
-        
-    Returns:
-        Dict[str, Any]: Results containing valid URLs, invalid URLs, and validation details
-    """
-    logger.info(f"Validating {len(urls)} URLs")
-    
-    valid_urls = []
-    invalid_urls = []
-    validation_details = {}
-    
-    # Process each URL in the list
-    for url in urls:
-        # Skip empty URLs
-        if not url or not url.strip():
-            continue
-            
-        # Validate the URL
-        validation_result = validate_url(url)
-        
-        # Store the validation details
-        validation_details[url] = validation_result
-        
-        # Add to appropriate list based on validation result
-        if validation_result.get("is_valid", False):
-            valid_urls.append(url)
-        else:
-            invalid_urls.append(url)
-    
-    return {
-        "status": "success",
-        "valid_urls": valid_urls,
-        "invalid_urls": invalid_urls,
-        "validation_details": validation_details,
-        "total_urls": len(urls),
-        "valid_count": len(valid_urls),
-        "invalid_count": len(invalid_urls)
-    }
-
 def validate_url(url: str) -> Dict[str, Any]:
     """
     Validates if a URL is properly formatted and accessible.
@@ -338,6 +294,26 @@ def generate_html_report(report_content: str, vendor_name: str) -> Dict[str, Any
                             color: #27ae60;
                             font-weight: bold;
                         }
+                        /* Question and Answer formatting */
+                        .question {
+                            font-weight: bold;
+                            color: #2c3e50;
+                            margin-top: 20pt;
+                            margin-bottom: 8pt;
+                            padding: 5pt 0;
+                            border-top: 1px solid #eee;
+                        }
+                        .answer {
+                            margin-bottom: 20pt;
+                            padding-left: 15pt;
+                        }
+                        .reasoning {
+                            margin-top: 8pt;
+                            margin-bottom: 20pt;
+                            padding-left: 15pt;
+                            color: #555;
+                            font-size: 0.95em;
+                        }
                     </style>
                 </head>
                 <body>
@@ -413,6 +389,42 @@ def generate_html_report(report_content: str, vendor_name: str) -> Dict[str, Any
         first_h1 = soup.find('h1')
         if first_h1 and vendor_name in first_h1.text and 'Vendor Risk Assessment Report' in first_h1.text:
             first_h1.decompose()
+            
+        # Format questions and answers with better spacing and styling
+        # Look for sections that contain risk assessment findings
+        risk_sections = []
+        for h2 in soup.find_all('h2'):
+            if 'Risk Assessment Findings' in h2.text:
+                risk_sections.append(h2)
+                
+        for section in risk_sections:
+            # Process all content after this heading until the next h2
+            current = section.find_next()
+            
+            while current and current.name != 'h2':
+                # Check for category headers (h3)
+                if current.name == 'h3':
+                    category_section = current
+                    
+                    # Process list items in this category
+                    ul_elements = current.find_next_siblings('ul')
+                    for ul in ul_elements:
+                        if ul.name == 'ul':
+                            for li in ul.find_all('li'):
+                                # Check if this is a question
+                                text = li.get_text()
+                                if text.startswith('Question:') or any(q in text for q in ['Has the vendor', 'Does the vendor', 'What is', 'How does']):
+                                    # This is a question
+                                    li['class'] = li.get('class', []) + ['question']
+                                elif text.startswith('Answer:'):
+                                    # This is an answer
+                                    li['class'] = li.get('class', []) + ['answer']
+                                elif text.startswith('Reasoning:'):
+                                    # This is reasoning
+                                    li['class'] = li.get('class', []) + ['reasoning']
+                
+                # Move to next element
+                current = current.find_next()
         
         # Find the references section
         references_section = None
