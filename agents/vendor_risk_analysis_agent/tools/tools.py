@@ -92,45 +92,55 @@ def validate_url(url: str) -> Dict[str, Any]:
     """
     logger.info(f"Validating URL: {url}")
     
-    result = {
-        "url": url,
-        "is_valid": False,
-        "status": "error",
-        "details": ""
-    }
+    # Check if the URL is empty
+    if not url or not url.strip():
+        return {
+            "url": url,
+            "is_valid": False,
+            "status": "error",
+            "details": "URL is empty"
+        }
     
-    # Check if URL format is valid
+    # Clean up the URL
+    url = url.strip()
+    
+    # Check if the URL is properly formatted
     if not validators.url(url):
-        result["details"] = "Invalid URL format. Please provide a complete URL including http:// or https://"
-        return result
+        return {
+            "url": url,
+            "is_valid": False,
+            "status": "error",
+            "details": "URL is not properly formatted"
+        }
     
-    # Check if domain exists and URL is accessible
+    # Check if the URL is accessible
     try:
-        # Parse URL to get domain
-        parsed_url = urlparse(url)
-        domain = parsed_url.netloc
+        response = requests.head(url, timeout=10, allow_redirects=True)
         
-        # Attempt to connect to the URL
-        response = requests.head(url, timeout=10)
-        
-        # Check if response is successful
+        # Check if the response status code indicates success
         if response.status_code < 400:
-            result["is_valid"] = True
-            result["status"] = "success"
-            result["details"] = f"URL is valid and accessible. Status code: {response.status_code}"
-            result["domain"] = domain
+            return {
+                "url": url,
+                "is_valid": True,
+                "status": "success",
+                "status_code": response.status_code,
+                "details": "URL is valid and accessible"
+            }
         else:
-            result["details"] = f"URL exists but returned an error. Status code: {response.status_code}"
-    
-    except requests.exceptions.ConnectionError:
-        result["details"] = "Could not connect to the URL. Please check if the domain exists and is accessible."
-    except requests.exceptions.Timeout:
-        result["details"] = "Connection timed out. The server might be slow or unavailable."
+            return {
+                "url": url,
+                "is_valid": False,
+                "status": "error",
+                "status_code": response.status_code,
+                "details": f"URL returned status code {response.status_code}"
+            }
     except requests.exceptions.RequestException as e:
-        result["details"] = f"An error occurred while accessing the URL: {str(e)}"
-    
-    logger.info(f"URL validation result: {result['status']} - {result['details']}")
-    return result
+        return {
+            "url": url,
+            "is_valid": False,
+            "status": "error",
+            "details": f"Error accessing URL: {str(e)}"
+        }
 
 # The MCP toolset automatically provides access to all tools exposed by the MCP server
 # For example: mcp_toolset.get_risk_questions(), mcp_toolset.search_web(), etc.

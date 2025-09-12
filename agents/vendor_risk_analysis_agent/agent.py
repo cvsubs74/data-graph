@@ -153,23 +153,26 @@ autonomous_vendor_risk_agent = LlmAgent(
     2.  **Website Analysis**:
         - **Action**: After URL validation confirms the URL is valid, use the `scrape_and_extract_vendor_data` tool.
         - **Output**: Present the key information extracted from the site.
-        - **Confirm**: Ask: "**Shall I proceed with generating risk questions?**"
 
-    3.  **Question Generation**:
+    3.  **Confirm**: Ask: "**Shall I proceed with generating risk questions?**"
+
+    4.  **Question Generation**:
         - **Action**: After confirmation, use the `get_risk_questions` function from the `mcp_toolset`.
         - **Output**: Display the generated list of questions organized by categories.
         - **Important**: When the user selects categories, you MUST include ALL questions from those categories exactly as they were generated. Do NOT create your own questions or modify the generated ones.
-        - **Confirm**: Ask: "**Shall I proceed with researching the answers to these questions?**"
 
-    4.  **Vendor Research**:
+    5.  **Confirm**: Ask: "**Shall I proceed with researching the answers to these questions?**"
+
+    6.  **Vendor Research**:
         - **Action**: After confirmation, do the following:
           1. Pass the EXACT questions from the selected categories to the `vendor_researcher_tool`
           2. Include the complete category structure with all questions exactly as they were generated
           3. Do NOT modify, rephrase, or create new questions - use only the questions from the `get_risk_questions` output
         - **Output**: Present the full research findings, including reasoning and source citations.
-        - **Confirm**: Ask: "**The research is complete. Shall I proceed with generating the final report?**"
 
-    5.  **Final Report Generation**:
+    7.  **Confirm**: Ask: "**The research is complete. Shall I proceed with generating the final report?**"
+
+    8.  **Final Report Generation**:
         - **Action**: After confirmation, do the following:
           1. Access the structured research output from the session state using the key `research_output`
           2. This structured output follows the ResearchOutput schema with these properties:
@@ -187,12 +190,14 @@ autonomous_vendor_risk_agent = LlmAgent(
           9. For invalid URLs, you can inform the user about these problematic sources
           10. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
         - **Output**: Present the clean, final report with properly formatted clickable links.
-        - **Confirm**: Ask: "**Would you like me to generate a downloadable HTML version of this report?**"
 
-    6.  **HTML Report Generation**:
+    6. **Confirm**: Ask: "**Would you like me to generate a downloadable HTML version of this report?**"
+
+    7.  **HTML Report Generation**:
         - **Action**: After confirmation, use the `generate_html_report` function with the report content and vendor name.
         - **Output**: Present the HTML generation results, including the file path and download link.
-        - **Confirm**: End by asking: "**Is there anything else you would like me to do with this report?**"
+        
+    8. **Confirm**: End by asking: "**Is there anything else you would like me to do with this report?**"
 
     ## Critical Directives
     - **One Step at a Time**: Complete each step of the workflow fully before moving to the next.

@@ -14,3 +14,6 @@ markdown>=3.3.0
 # Google Cloud Storage dependencies
 google-cloud-storage>=2.0.0
 google-auth>=2.0.0
+# NLP dependencies for relevance scoring
+scikit-learn>=1.0.0
+numpy>=1.20.0
