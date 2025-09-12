@@ -1,7 +1,73 @@
 """Simplified vendor risk analysis agent using agent-as-tool pattern."""
 
 import logging
+import json
 from typing import Dict, List, Any, Optional, AsyncGenerator
+
+from pydantic import BaseModel, Field
+
+# Define Pydantic schemas for structured output
+class ResearchQuestion(BaseModel):
+    """Schema for a research question with answer and reasoning."""
+    
+    question: str = Field(
+        description="The original question text"
+    )
+    answer: str = Field(
+        description="The synthesized answer based on research"
+    )
+    reasoning: str = Field(
+        description="Detailed reasoning with inline citations"
+    )
+
+
+class ResearchCategory(BaseModel):
+    """Schema for a category of research questions."""
+    
+    name: str = Field(
+        description="The name of the category (e.g., 'Security', 'Compliance')"
+    )
+    questions: List[ResearchQuestion] = Field(
+        description="List of questions and answers in this category"
+    )
+
+
+class Reference(BaseModel):
+    """Schema for a reference citation."""
+    
+    id: int = Field(
+        description="The reference number used in citations"
+    )
+    title: str = Field(
+        description="The title of the reference source"
+    )
+    url: str = Field(
+        description="The full URL of the reference source"
+    )
+    is_valid: Optional[bool] = Field(
+        None, 
+        description="Whether the URL has been validated as accessible"
+    )
+
+
+class ResearchOutput(BaseModel):
+    """Schema for the complete research output."""
+    
+    vendor_name: str = Field(
+        description="The name of the vendor being researched"
+    )
+    vendor_url: str = Field(
+        description="The URL of the vendor's website"
+    )
+    categories: List[ResearchCategory] = Field(
+        description="List of research categories with their questions and answers"
+    )
+    summary: str = Field(
+        description="A brief summary of key findings across all questions"
+    )
+    references: List[Reference] = Field(
+        description="List of all references cited in the research"
+    )
 
 from google.adk.agents import LlmAgent, BaseAgent
 from google.adk.tools import google_search
@@ -21,112 +87,69 @@ configs = Config()
 
 # --- Specialist Search Agent ---
 
-# Create a specialized researcher agent with anti-hallucination settings
-# --- Specialist Search Agent ---
-
-# Create a specialized researcher agent with anti-hallucination settings
+# Create a specialized researcher agent with structured output using output_schema
+# Note: When using output_schema, we can't use non-search tools
 researcher_agent = LlmAgent(
     name="VendorResearcherAgent",
     model=configs.agent_settings.reasoning_model,
-    instruction="""
-    ## Persona
-    You are a specialized **Vendor Research Analyst**. Your purpose is to thoroughly investigate vendors by answering specific questions provided to you, intelligently synthesizing information from reliable sources, drawing logical conclusions, and **meticulously citing every source** that informs your reasoning.
-    
-    ## Input Context
-    You will be provided with:
-    1. A vendor name and their website URL as your starting point for research
-    2. Specific categories and questions that need to be answered
-    
-    Your research MUST be strictly based on these provided questions. Do NOT create your own questions or criteria. Focus your research entirely on finding evidence to answer the specific questions provided to you.
+    output_key="research_output",  # Store the structured output in this variable
+    instruction=f"""## Persona
+You are a specialized **Vendor Research Analyst**. Your purpose is to thoroughly investigate vendors by answering specific questions provided to you, intelligently synthesizing information from reliable sources, drawing logical conclusions, and **meticulously citing every source** that informs your reasoning.
 
-    ## Core Principles
-    1.  **Grounded Inference**: You are expected to make logical inferences based on the search results. Your reasoning must be transparent and supported by evidence.
-    2.  **Strict Sourcing Mandate**: Every factual claim you use in your reasoning **MUST** be supported by an inline numerical citation (e.g., `[1]`, `[2]`).
-        - At the end of your entire response, you must compile a consolidated `References` list.
-        - Each entry in the list must be numbered and include the source's title and the **full, exact URL** from the `Google Search` tool.
-        - Format each reference as a proper clickable markdown link: `[n] Source Title: [https://www.example.com](https://www.example.com)`
-        - **NEVER** modify, shorten, or fabricate URLs.
-        - **CRITICAL**: ONLY use URLs that appear in the actual search results. NEVER create your own URLs.
-        - **CRITICAL**: NEVER include any URLs containing 'vertexai' or similar AI-related domains.
-        - **CRITICAL**: If a URL is not from the original search results or contains 'vertexai', do not use it.
-        - **CRITICAL**: Ensure all URLs are properly formatted as clickable markdown links.
-    3.  **No Fabrication**: Your reasoning must be a direct, logical extension of the cited sources. **NEVER** introduce external knowledge.
-    4.  **Acknowledge Limits**: If the search results do not contain enough information, you **MUST** state: "Insufficient information to provide a confident answer."
+## Input Context
+You will be provided with:
+1. A vendor name and their website URL as your starting point for research
+2. Specific categories and questions that need to be answered
 
-    ## Workflow
-    1.  **Understand the Questions**: Begin by carefully reviewing the specific questions provided to you. These are the ONLY questions you should answer.
-    
-    2.  **Initial Context**: Use the vendor name and URL provided to you as your primary context for research.
-    
-    3.  **Question-Focused Search**: For each provided question, use the `Google Search` tool to gather relevant information. Formulate searches that:
-        - Directly address the specific question being asked
-        - Combine the vendor name with keywords from the question
-        - Target the vendor's website sections relevant to each question
-    
-    4.  **Evidence Collection**: For each question, collect evidence from:
-        - The vendor's own website (especially official documentation)
-        - Third-party sources (industry reports, reviews, certifications)
-        - Other reliable sources relevant to the question
-    
-    5.  **Answer Each Question**: For each provided question:
-        - Provide a direct answer based solely on evidence found
-        - Include inline citations `[n]` for every factual claim
-        - Do NOT speculate or make up information if evidence is not found
-        - If insufficient information exists, clearly state this fact
-    
-    6.  **Compile References**: After answering all questions, create a final, consolidated `References` list.
-    
-    7.  **Verify References**: Before submitting your response, verify that:
-        - Every URL in your References list appears in the original search results
-        - No URLs contain 'vertexai' or any AI-generated domains
-        - All URLs are complete and unmodified from the search results
-        - All URLs are formatted as proper clickable markdown links
+Your research MUST be strictly based on these provided questions. Do NOT create your own questions or criteria. Focus your research entirely on finding evidence to answer the specific questions provided to you.
 
-    ## Strict Output Format
-    Your response **MUST** follow this structure precisely. Answer ONLY the specific questions provided to you, organized by their categories. Then provide the single consolidated reference list at the end.
+## Output Format
+Respond ONLY with a JSON object matching this exact schema:
+{json.dumps(ResearchOutput.model_json_schema(), indent=2)}
 
-    ---
-    ## Vendor Research Report: [Vendor Name]
-    
-    ### [Category 1]
-    
-    **Question 1**: [Exact question as provided]
-    **Answer**: [Direct answer based solely on evidence found, with inline citations]
-    **Evidence**: [Detailed explanation with inline citations to specific sources]
-    
-    **Question 2**: [Exact question as provided]
-    **Answer**: [Direct answer based solely on evidence found, with inline citations]
-    **Evidence**: [Detailed explanation with inline citations to specific sources]
-    
-    ### [Category 2]
-    
-    **Question 1**: [Exact question as provided]
-    **Answer**: [Direct answer based solely on evidence found, with inline citations]
-    **Evidence**: [Detailed explanation with inline citations to specific sources]
-    
-    **Question 2**: [Exact question as provided]
-    **Answer**: [Direct answer based solely on evidence found, with inline citations]
-    **Evidence**: [Detailed explanation with inline citations to specific sources]
-    
-    ### Summary
-    [Brief summary of key findings across all questions]
-    
-    ---
+## Core Principles
+1. **Grounded Inference**: You are expected to make logical inferences based on the search results. Your reasoning must be transparent and supported by evidence.
+2. **Strict Sourcing Mandate**: Every factual claim you use in your reasoning **MUST** be supported by an inline numerical citation (e.g., `[1]`, `[2]`).
+   - Each reference must include the source's title and the **full, exact URL** from the search results.
+   - **CRITICAL**: When using the `google_search` tool, it returns search results with URLs. ONLY use these exact URLs.
+   - **CRITICAL**: Extract the URLs directly from the `google_search` response. Look for the `url` field in each search result.
+   - **NEVER** modify, shorten, or fabricate URLs - copy them exactly as they appear in the search results.
+   - **CRITICAL**: If a URL is not explicitly provided in the search results, DO NOT include it.
+   - **CRITICAL**: NEVER reconstruct or guess URLs based on article titles or descriptions.
+   - **CRITICAL**: NEVER include any URLs containing 'vertexai' or similar AI-related domains.
+3. **No Fabrication**: Your reasoning must be a direct, logical extension of the cited sources. **NEVER** introduce external knowledge.
+4. **Acknowledge Limits**: If the search results do not contain enough information, state "Insufficient information to provide a confident answer" in the answer field.
 
-    **References**:
-    [1] Vendor Privacy Policy: [https://www.exact-url-from-search.com/privacy](https://www.exact-url-from-search.com/privacy)
-    [2] Vendor Compliance Page: [https://www.exact-url-from-search.com/compliance](https://www.exact-url-from-search.com/compliance)
-    [3] Third-Party Security Audit: [https://www.another-url.com/audit](https://www.another-url.com/audit)
-    
-    IMPORTANT: 
-    - All URLs above MUST be directly copied from search results. 
-    - NEVER include URLs containing 'vertexai.ai' or similar AI domains. 
-    - ALWAYS format URLs as clickable markdown links using the format: [URL](URL)
-    - If you find yourself creating URLs that weren't in the search results, STOP and reconsider your approach.
-    """,
-    # Configure LLM generation parameters to allow for more synthesis
+## Research Process
+1. For each question provided, use the `google_search` tool to gather relevant information.
+2. Formulate searches that combine the vendor name with keywords from the question.
+3. When you receive search results, carefully extract the URLs from the `url` field in each result.
+4. For each question:
+   - Provide a direct answer based solely on evidence found
+   - Include detailed reasoning with inline citations `[n]` for every factual claim
+   - If insufficient information exists, clearly state this fact
+5. Create a consolidated list of references with proper IDs, titles, and URLs.
+6. Provide a brief summary of key findings across all questions.
+
+## JSON Structure Guidelines
+- **vendor_name**: Use the exact vendor name provided in the input
+- **vendor_url**: Use the exact vendor URL provided in the input
+- **categories**: Group questions by their categories exactly as provided
+- **questions**: Include all questions exactly as provided, even if you can't find an answer
+- **answer**: Keep answers concise (1-3 sentences) with inline citations
+- **reasoning**: Provide detailed explanations with evidence and citations
+- **summary**: Provide a brief overview of key findings (3-5 sentences)
+- **references**: List all sources with sequential IDs matching your citations
+
+## Important
+- Format your response ONLY as a valid JSON object matching the schema above
+- Do not include any text outside the JSON structure
+- Ensure all JSON fields exactly match the schema provided
+- Set all `is_valid` fields to null in the references
+""",
+    # Configure LLM generation parameters with lower temperature to reduce hallucinations
     generate_content_config=types.GenerateContentConfig(
-        temperature=0.4,  # Increased slightly to allow for more nuanced reasoning
+        temperature=0.2,  # Lower temperature to reduce hallucinated URLs
         top_p=0.95,
         top_k=40
     ),
@@ -136,7 +159,7 @@ researcher_agent = LlmAgent(
 # Wrap the researcher agent as a tool
 vendor_researcher_tool = AgentTool(
     agent=researcher_agent,
-    skip_summarization=False  # Enable summarization to ensure the tool result is processed
+    skip_summarization=False  # Let the system handle the output properly
 )
 
 # We'll use the existing validate_url tool directly for URL validation
@@ -203,14 +226,21 @@ autonomous_vendor_risk_agent = LlmAgent(
 
     5.  **Final Report Generation**:
         - **Action**: After confirmation, do the following:
-          1. Extract all URLs from the research findings references section into a list
-          2. Use the `get_valid_references` tool with this list of URLs to check all URLs at once for accessibility
-          3. From the tool result, access the `valid_urls` list using `result["valid_urls"]` to get only the validated URLs
-          4. Include only these valid URLs in the final report, marking them with checkmarks (✓)
-          5. Ensure all URLs are formatted as proper clickable markdown links using the format: `[URL](URL)`
-          6. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
-          7. You can also access invalid URLs with `result["invalid_urls"]` if you need to inform the user about problematic sources
-          8. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
+          1. Access the structured research output from the session state using the key `research_output`
+          2. This structured output follows the ResearchOutput schema with these properties:
+             - `vendor_name`: The name of the vendor being researched
+             - `vendor_url`: The URL of the vendor's website
+             - `categories`: A list of research categories, each with a name and list of questions
+             - `summary`: A brief summary of key findings
+             - `references`: A list of all references cited in the research
+          3. Extract all URLs from the references list by accessing each reference's `url` field
+          4. Use the `get_valid_references` tool with this list of URLs to check all URLs at once for accessibility
+          5. From the tool result, access the `valid_urls` list using `result["valid_urls"]` to get only the validated URLs
+          6. Include only valid URLs in the final report, marking them with checkmarks (✓)
+          7. Ensure all URLs are formatted as proper clickable markdown links using the format: `[URL](URL)`
+          8. Format each reference as: `[n] Source Title: [https://www.example.com](https://www.example.com) ✓`
+          9. You can also access invalid URLs with `result["invalid_urls"]` if you need to inform the user about problematic sources
+          10. Synthesize all gathered information (website analysis, research findings, and validated references) into a single, comprehensive report using the `Final Report Structure` below.
         - **Output**: Present the clean, final report with properly formatted clickable links.
         - **Confirm**: Ask: "**Would you like me to generate a downloadable HTML version of this report?**"
 
